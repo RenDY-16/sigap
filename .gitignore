@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.local-certs/
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+*.dump
+*.log
+qa/
