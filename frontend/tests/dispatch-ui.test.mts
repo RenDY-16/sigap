@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+const {DispatchQueueCards,DispatchDetailPanel,DispatchCreateControls,DispatchPendingPayload}=await import('../src/components/StaffDispatchPage.tsx');
+const {prepareDispatchDraft,writeDispatchDraft,readDispatchDraft,clearDispatchDraft}=await import('../src/domain/dispatchDraft.ts');
+const fixture={id:'11111111-1111-4111-8111-111111111111',incidentId:'22222222-2222-4222-8222-222222222222',regionId:'local-staging',scenario:'unknown',status:'unknown',attemptCount:1,nextAttemptAt:null,replayOf:null,reviewedAt:null,createdAt:'2026-10-12T00:00:00Z',updatedAt:'2026-10-12T00:00:01Z',simulated:true,attempts:[{attemptNumber:1,startedAt:'2026-10-12T00:00:00Z',finishedAt:'2026-10-12T00:00:01Z',result:'unknown',simulated:true}],acknowledgements:[]};
+const html=(component:any,props:any)=>renderToStaticMarkup(React.createElement(component,props));
+const unknown=html(DispatchDetailPanel,{detail:fixture,canReview:true,pending:false,onReview:()=>{}});
+assert(unknown.includes('SIMULASI'));assert(unknown.includes('Tutup review'));assert(!unknown.includes('Tinjau replay'));
+assert(!html(DispatchDetailPanel,{detail:fixture,canReview:false,pending:false,onReview:()=>{}}).includes('Tutup review'));
+assert(html(DispatchDetailPanel,{detail:{...fixture,status:'dead_letter'},canReview:true,pending:false,onReview:()=>{}}).includes('Tinjau replay'));
+assert(!html(DispatchDetailPanel,{detail:{...fixture,status:'dead_letter',reviewedAt:fixture.updatedAt},canReview:true,pending:false,onReview:()=>{}}).includes('Tinjau replay'));
+assert(html(DispatchCreateControls,{scenario:'accepted',disabled:true,onScenario:()=>{},onSubmit:()=>{}}).includes('disabled'));
+assert(html(DispatchQueueCards,{items:[],selectedId:null,pending:false,onSelect:()=>{}}).includes('Antrean pengiriman kosong'));
+assert(html(DispatchQueueCards,{items:[fixture],selectedId:fixture.id,pending:false,onSelect:()=>{}}).includes('aria-pressed="true"'));
+class MemoryStorage{data=new Map<string,string>();getItem(k:string){return this.data.get(k)??null;}setItem(k:string,v:string){this.data.set(k,v);}removeItem(k:string){this.data.delete(k);}}
+const storage=new MemoryStorage(),draft=prepareDispatchDraft({action:'create',targetId:fixture.incidentId,scenario:'accepted'});
+assert(html(DispatchPendingPayload,{draft:prepareDispatchDraft({action:'create',targetId:fixture.incidentId,scenario:'rejected'})}).includes('Ditolak'));
+writeDispatchDraft(storage as any,'staff-a',draft);assert.deepEqual(readDispatchDraft(storage as any,'staff-a'),draft);assert.equal(readDispatchDraft(storage as any,'staff-b'),null);
+clearDispatchDraft(storage as any,'staff-a');assert.equal(readDispatchDraft(storage as any,'staff-a'),null);
+const review=prepareDispatchDraft({action:'replay',targetId:fixture.id,reason:'  Synthetic review  '});assert.equal(review.reason,'Synthetic review');writeDispatchDraft(storage as any,'staff-a',review);assert.deepEqual(readDispatchDraft(storage as any,'staff-a'),review);
+storage.setItem('sigap.dispatch.pending.v1.staff-a','{"corrupted":true}');assert.throws(()=>readDispatchDraft(storage as any,'staff-a'));
+assert.throws(()=>writeDispatchDraft({setItem(){throw new Error('Unavailable');}} as any,'staff-a',draft));
+console.log(JSON.stringify({status:'passed',scope:'SSR control visibility and durable browser draft contract; actual browser interactions not covered',checks:['unknown never offers replay; supervisor-only review controls','reviewed items suppress repeat review; pending creation is disabled','simulation markers, empty state and selection semantics present','retry draft retains exact key/payload across reload and is scoped to staff','corrupt/unavailable storage fails before a new action can be submitted']},null,2));

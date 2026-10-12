@@ -8,6 +8,8 @@ import { closeDatabasePool, createDatabasePool } from "./db/pool.js";
 import { runMigrations } from "./db/migrate.js";
 import { attachSocketServer } from "./realtime/socket-server.js";
 import { createOutboxPublisher } from "./services/outbox-publisher.js";
+import { createDispatchCoordinator } from "./dispatch/dispatch-coordinator.js";
+import { LocalMockAdapter } from "./dispatch/local-mock-adapter.js";
 
 const config = loadServerConfig();
 const pool = createDatabasePool(config);
@@ -30,6 +32,7 @@ const sockets = attachSocketServer(server, runtime.services, runtime.staffSessio
 runtime.setSocketSessionRevoker(sockets.disconnectStaffSession);
 runtime.setSocketAccountRevoker(sockets.disconnectStaffAccount);
 const outboxPublisher = createOutboxPublisher(pool, sockets.publishOutboxEvent);
+const dispatchCoordinator = createDispatchCoordinator(pool, new LocalMockAdapter());
 
 let shuttingDown = false;
 async function shutdown(): Promise<void> {
@@ -50,6 +53,7 @@ async function shutdown(): Promise<void> {
     });
     await sockets.stopAcceptingUpdates();
     await runtime.services.stopAcceptingMutations();
+    await dispatchCoordinator.stop();
     await outboxPublisher.stop();
     await new Promise<void>((resolve) => sockets.io.close(() => resolve()));
     await httpClosed;
@@ -65,6 +69,7 @@ async function shutdown(): Promise<void> {
 process.once("SIGINT", () => { void shutdown(); });
 process.once("SIGTERM", () => { void shutdown(); });
 outboxPublisher.start();
+dispatchCoordinator.start();
 server.once("error", () => {
   process.stderr.write("SIGAP HTTP server failed to start.\n");
   process.exitCode = 1;

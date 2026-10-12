@@ -81,6 +81,7 @@ import { connectCitizenSocket, connectStaffSocket, hasSeenOutboxEvent, type Real
 import { StaffAuditPage } from "./components/StaffAuditPage";
 import { StaffMonitoringPage } from "./components/StaffMonitoringPage";
 import { StaffOutboxPage } from "./components/StaffOutboxPage";
+import { StaffDispatchPage } from "./components/StaffDispatchPage";
 import { StaffAccountsPage } from "./components/StaffAccountsPage";
 import { MapView } from "./components/MapView";
 import { CityScene } from "./scene/CityScene";
@@ -157,26 +158,26 @@ function useDemo() {
 
 const STATUS_LABEL: Record<IncidentStatus, string> = {
   received: "Laporan diterima",
-  acknowledged: "Diakui petugas demo",
-  triaged: "Ditinjau petugas demo",
+  acknowledged: "Diakui petugas",
+  triaged: "Ditinjau petugas",
   assigned: "Unit simulasi ditetapkan",
   in_progress: "Simulasi berlangsung",
   referred: "Dirujuk dalam simulasi",
   delivery_failed: "Pengiriman simulasi gagal",
-  escalation_pending: "Menunggu eskalasi demo",
+  escalation_pending: "Menunggu eskalasi petugas",
   resolved: "Simulasi selesai",
 };
 
 const STATUS_HELP: Record<IncidentStatus, string> = {
-  received: "Laporan tersimpan di staging dan menunggu pengakuan petugas demo.",
-  acknowledged: "Petugas demo mencatat bahwa laporan sudah ditinjau untuk alur simulasi.",
-  triaged: "Petugas demo sudah melakukan triase staging.",
-  assigned: "Unit demo dipilih untuk simulasi; tidak ada unit nyata yang dikirim.",
+  received: "Laporan tersimpan di server lokal dan menunggu peninjauan petugas.",
+  acknowledged: "Petugas mencatat bahwa laporan sudah ditinjau.",
+  triaged: "Petugas sudah melakukan triase laporan.",
+  assigned: "Pilihan unit dicatat secara internal; tidak ada unit nyata yang dikirim.",
   in_progress: "Alur penanganan simulasi sedang berlangsung.",
   referred: "Alur simulasi ditutup dengan status rujukan; tidak ada layanan eksternal yang diberi tahu.",
   delivery_failed: "Pengiriman pada alur simulasi gagal; status ini bukan kegagalan layanan darurat nyata.",
-  escalation_pending: "Alur simulasi menunggu tindakan eskalasi petugas demo.",
-  resolved: "Alur penanganan simulasi ditandai selesai oleh petugas demo.",
+  escalation_pending: "Laporan menunggu tindakan eskalasi petugas.",
+  resolved: "Alur penanganan ditandai selesai oleh petugas.",
 };
 
 const STATUS_ORDER: IncidentStatus[] = ["received", "acknowledged", "triaged", "assigned", "in_progress", "resolved"];
@@ -185,17 +186,17 @@ function DemoNotice({ compact = false }: { compact?: boolean }) {
   return (
     <div className={`demo-notice ${compact ? "demo-notice-compact" : ""}`} role="note">
       <Info size={18} weight="fill" aria-hidden="true" />
-      <span>Prototipe demo — laporan tidak dikirim ke layanan darurat.</span>
+      <span>Laporan ini tersimpan di server lokal dan belum terhubung ke layanan darurat resmi.</span>
     </div>
   );
 }
 
 function Brand({ inverse = false }: { inverse?: boolean }) {
   return (
-    <Link to="/" className={`brand ${inverse ? "brand-inverse" : ""}`} aria-label="SIGAP demo, halaman utama">
+    <Link to="/" className={`brand ${inverse ? "brand-inverse" : ""}`} aria-label="SIGAP, halaman utama">
       <span className="brand-word">SIGAP</span>
       <span className="brand-dot" aria-hidden="true" />
-      <span className="brand-demo">DEMO</span>
+      <span className="brand-demo">LAPORAN</span>
     </Link>
   );
 }
@@ -214,7 +215,7 @@ function LocationSourceLabel({ source }: { source: LocationSource }) {
 }
 
 function LandingPage() {
-  const { progress, activeChapter, reducedMotion } = useLandingScrollScene();
+  const { progress, activeChapter, reducedMotion, footerVisible } = useLandingScrollScene();
   const steps = [
     { id: "kenali", label: "Kenali" },
     { id: "laporkan", label: "Laporkan" },
@@ -231,8 +232,8 @@ function LandingPage() {
       <header className="landing-header">
         <Brand />
         <nav className="landing-nav" aria-label="Navigasi utama">
-          <a href="#alur-sos">Alur SOS</a>
-          <Link to="/dashboard/login">Dashboard</Link>
+          <a href="#alur-sos">Cara melapor</a>
+          <Link to="/dashboard/login">Masuk petugas</Link>
         </nav>
       </header>
 
@@ -240,11 +241,11 @@ function LandingPage() {
         <div className="hero-copy">
           <span className="hero-kicker" aria-hidden="true"><span /></span>
           <h1 id="hero-title">Lokasi jelas.<br />Laporan terarah.</h1>
-          <p>Prototipe demo pelaporan insiden keamanan.</p>
+          <p>Pelaporan insiden keamanan dengan lokasi yang jelas dan status yang terpantau.</p>
           <Link className="button button-primary hero-cta" to="/report/new">
-            Mulai simulasi SOS <ArrowRight size={21} weight="bold" aria-hidden="true" />
+            Buat laporan <ArrowRight size={21} weight="bold" aria-hidden="true" />
           </Link>
-          <p className="hero-assurance">Prototipe demo <span>·</span> Tidak mengirim bantuan nyata</p>
+          <p className="hero-assurance">Tersimpan di server lokal <span>·</span> Belum terhubung ke layanan darurat resmi</p>
         </div>
         <a className="scroll-cue" href="#alur-sos">
           <span className="scroll-cue-icon"><ArrowDown size={19} aria-hidden="true" /></span>
@@ -252,7 +253,7 @@ function LandingPage() {
         </a>
       </section>
 
-      <div className="journey-progress" aria-label={`Tahap aktif: ${steps.find((step) => step.id === activeChapter)?.label}`}>
+      <div className="journey-progress" hidden={footerVisible} aria-label={`Tahap aktif: ${steps.find((step) => step.id === activeChapter)?.label}`}>
         {steps.map((step, index) => (
           <a
             key={step.id}
@@ -267,15 +268,15 @@ function LandingPage() {
       </div>
 
       <section className="journey-intro" id="alur-sos" aria-labelledby="journey-title">
-        <p className="eyebrow">ALUR SIMULASI</p>
-        <h2 id="journey-title">Dari laporan sampai status akhir, satu alur yang mudah diikuti.</h2>
-        <p>Jelajahi alur warga dan dashboard petugas demo. Data tersimpan sementara di server demo dan akan hilang saat server dimulai ulang.</p>
+        <p className="eyebrow">ALUR PELAPORAN</p>
+        <h2 id="journey-title">Cara membuat laporan</h2>
+        <p>Isi kejadian, bagikan lokasi, lalu simpan tautan untuk melihat pembaruan laporan.</p>
       </section>
 
       <section className="story-chapter story-chapter-report" id="laporkan" data-landing-chapter="laporkan">
         <div className="story-card">
           <span className="story-index">01 <span>— LAPORKAN</span></span>
-          <h2>Ceritakan kejadian. Pilih lokasi dengan jelas.</h2>
+          <h2>Isi laporan</h2>
           <p>Isi deskripsi singkat, lalu gunakan GPS perangkat setelah laporan aktif atau pilih titik simulasi sendiri.</p>
           <Link to="/report/new" className="text-link">Lihat form laporan <ArrowRight size={18} aria-hidden="true" /></Link>
         </div>
@@ -285,9 +286,9 @@ function LandingPage() {
       <section className="story-chapter story-chapter-track" id="pantau" data-landing-chapter="pantau">
         <div className="story-card story-card-right">
           <span className="story-index">02 <span>— PANTAU</span></span>
-          <h2>Lihat perubahan status, tanpa menebak-nebak.</h2>
-          <p>Warga melihat status dan koordinat. Petugas demo dapat memverifikasi, menetapkan unit simulasi, lalu menyelesaikan laporan.</p>
-          <Link to="/dashboard/login" className="text-link">Buka dashboard demo <ArrowRight size={18} aria-hidden="true" /></Link>
+          <h2>Pantau status</h2>
+          <p>Simpan tautan laporan untuk melihat lokasi dan pembaruan dari petugas.</p>
+          
         </div>
         <div className="story-note story-note-right"><Pulse size={20} /><span>Unit dan progres di layar adalah simulasi.</span></div>
       </section>
@@ -295,14 +296,14 @@ function LandingPage() {
       <section className="story-chapter story-chapter-finish" id="selesai" data-landing-chapter="selesai">
         <div className="story-card">
           <span className="story-index">03 <span>— SELESAI</span></span>
-          <h2>Demo berakhir. Berbagi lokasi juga berhenti.</h2>
-          <p>Laporan dapat dibatalkan oleh warga atau diselesaikan di dashboard demo. Data akan hilang saat server demo dimulai ulang.</p>
-          <Link to="/report/new" className="button button-dark">Mulai simulasi <ArrowRight size={18} aria-hidden="true" /></Link>
+          <h2>Kendalikan berbagi lokasi</h2>
+          <p>Warga dapat meminta penghentian laporan. Pelacakan GPS juga berhenti saat laporan selesai atau koneksi terputus.</p>
+          <Link to="/report/new" className="button button-dark">Buat laporan <ArrowRight size={18} aria-hidden="true" /></Link>
         </div>
         <DemoNotice compact />
       </section>
 
-      <footer className="landing-footer"><Brand /><span>Konsep demo · status dan unit tidak merepresentasikan layanan resmi.</span></footer>
+      <footer className="landing-footer"><Brand /><span>Server lokal · belum terhubung ke layanan darurat resmi.</span></footer>
     </main>
   );
 }
@@ -465,32 +466,32 @@ function ReportNewPage() {
         const refreshed = await loadConfig();
         if (refreshed) { setCategoryId(refreshed.categories[0]?.id ?? ''); setFieldAnswers({}); }
       } else {
-        setError(cause instanceof Error ? cause.message : 'Laporan demo belum dapat dibuat. Coba lagi dengan isi yang sama.');
+        setError(cause instanceof Error ? cause.message : 'Laporan belum dapat dibuat. Coba lagi dengan isi yang sama.');
       }
     } finally { submitLock.current = false; setSubmitting(false); }
   }
 
   return (
     <main className="app-page report-page">
-      <AppHeader title="Buat laporan simulasi" />
+      <AppHeader title="Buat laporan" />
       <div className="page-container narrow-container">
         <DemoNotice />
-        <div className="page-heading"><p className="eyebrow">LAPORAN BARU <span>·</span> DEMO</p><h1>Buat laporan<br />simulasi SOS.</h1><p>Isi kejadian secara singkat. Pilih sumber lokasi yang ingin digunakan dalam simulasi.</p></div>
-        {configState === 'loading' && !locked && <p className="editorial-state" role="status"><CircleNotch className="spin" size={18} /> Memuat kategori dan jam layanan staging…</p>}
+        <div className="page-heading editorial-topic-heading"><div><p className="eyebrow">LAPORAN BARU</p><h1>Buat laporan</h1><p>Isi informasi kejadian. Bagikan GPS setelah laporan tersimpan.</p></div><img className="topic-illustration report-illustration" src="/assets/report-editorial.png" alt="" aria-hidden="true" width="1536" height="1024" /></div>
+        {configState === 'loading' && !locked && <p className="editorial-state" role="status"><CircleNotch className="spin" size={18} /> Memuat pilihan laporan…</p>}
         {configState === 'error' && !locked && <div className="editorial-state editorial-error" role="alert"><strong>Form laporan belum tersedia.</strong><span>{configError}</span><button className="button button-outline" type="button" onClick={() => { void loadConfig(); }}>Coba muat ulang</button></div>}
-        {configState === 'ready' && !withinHours && !locked && <div className="editorial-state" role="status"><strong>Di luar jam layanan simulasi.</strong><span>{config?.publicFallback.copy}</span>{config?.publicFallback.contact && <span>Kontak pada demo: {config.publicFallback.contact}</span>}<small>Jam ini hanya informasi staging dan tidak membatasi pengiriman form. SIGAP demo bukan saluran bantuan darurat; gunakan layanan resmi untuk keadaan darurat.</small></div>}
+        {configState === 'ready' && !withinHours && !locked && <div className="editorial-state" role="status"><strong>Di luar jam layanan informasi.</strong><span>Form tetap menerima laporan ke server lokal, tetapi laporan tidak diteruskan ke layanan darurat resmi.</span>{config?.publicFallback.contact && <span>Informasi kontak: {config.publicFallback.contact}</span>}<small>Untuk keadaan darurat, hubungi layanan resmi di wilayah Anda.</small></div>}
         {versionConflict && !locked && <p className="editorial-state" role="status">Konfigurasi terbaru sudah dimuat. Periksa kembali kategori serta jawaban sebelum mengirim laporan baru.</p>}
-        {locked && <><p className="success-note" role="status">Percobaan laporan belum terkonfirmasi. Isi, kategori, versi konfigurasi, token, dan idempotency key terkunci; retry mengirim ulang payload yang sama.</p>{draft?.input.fieldAnswers&&Object.keys(draft.input.fieldAnswers).length>0&&<div className="editorial-state"><strong>Jawaban tersimpan untuk retry</strong>{Object.entries(draft.input.fieldAnswers).map(([key,value])=><span key={key}>{key}: {String(value)}</span>)}</div>}</>}
+        {locked && <><p className="success-note" role="status">Pengiriman belum terkonfirmasi. Isi laporan disimpan agar Anda dapat mencoba lagi.</p>{draft?.input.fieldAnswers&&Object.keys(draft.input.fieldAnswers).length>0&&<div className="editorial-state"><strong>Isi laporan tersimpan</strong>{Object.entries(draft.input.fieldAnswers).map(([key,value])=><span key={key}>{key}: {String(value)}</span>)}</div>}</>}
         {(active || locked) && <form className="report-form" onSubmit={event => { void handleSubmit(event); }}>
           {!locked && config && <div className="form-section"><label className="field-label" htmlFor="incident-category">Jenis kejadian <span className="optional-label">Wajib</span></label><select id="incident-category" className="editorial-select" value={categoryId} onChange={event => { setCategoryId(event.target.value); setFieldAnswers({}); }} required><option value="" disabled>Pilih kategori</option>{config.categories.map(category => <option key={category.id} value={category.id}>{category.label}</option>)}</select></div>}
-          {locked && <p className="form-section"><span className="field-label">Kategori terkunci</span><strong>{config?.categories.find(item => item.id === draft?.input.categoryId)?.label ?? draft?.input.categoryId}</strong><small>Konfigurasi versi {draft?.input.configVersion}; retry tetap memakai versi yang sama.</small></p>}
+          {locked && <p className="form-section"><span className="field-label">Kategori terkunci</span><strong>{config?.categories.find(item => item.id === draft?.input.categoryId)?.label ?? draft?.input.categoryId}</strong><small>Isi tersimpan digunakan saat mencoba kembali.</small></p>}
           {configuredFields.map(field => <div className="form-section" key={field.key}><label className="field-label" htmlFor={`field-${field.key}`}>{field.label}{field.required && <span className="optional-label">Wajib</span>}</label>
             {field.type === 'boolean' ? <div className="boolean-choice" role="radiogroup" aria-label={field.label}>{([['ya',true],['tidak',false]] as const).map(([label,value])=><label className="check-field" key={label}><input id={`field-${field.key}-${label}`} type="radio" name={`field-${field.key}`} checked={(locked ? draft?.input.fieldAnswers?.[field.key] : fieldAnswers[field.key]) === value} disabled={locked||submitting} onChange={()=>setAnswer(field.key,value)} />{label==='ya'?'Ya':'Tidak'}</label>)}</div> : field.type === 'select' ? <select id={`field-${field.key}`} className="editorial-select" required={field.required} disabled={locked||submitting} value={String(locked ? draft?.input.fieldAnswers?.[field.key] ?? '' : fieldAnswers[field.key] ?? '')} onChange={event => setAnswer(field.key,event.target.value)}><option value="">Pilih…</option>{(field.options ?? []).map(option => <option key={option} value={option}>{option}</option>)}</select> : <input id={`field-${field.key}`} className="editorial-input" maxLength={500} required={field.required} disabled={locked||submitting} value={String(locked ? draft?.input.fieldAnswers?.[field.key] ?? '' : fieldAnswers[field.key] ?? '')} onChange={event => setAnswer(field.key,event.target.value)} />}
           </div>)}
           <div className="form-section"><div className="form-label-row"><label className="field-label" htmlFor="description">Apa yang terjadi?</label><span className="optional-label">Wajib</span></div><textarea id="description" name="description" value={description} disabled={locked||submitting} maxLength={500} rows={5} placeholder="Contoh: Saya melihat seseorang mencoba membuka pintu kendaraan di area parkir." onChange={event => setDescription(event.target.value)} required /><div className="field-footer"><span>Hindari menulis nama atau informasi kontak pribadi.</span><span>{description.length}/500</span></div></div>
           <fieldset className="form-section mode-fieldset"><legend className="field-label">Pilih sumber lokasi</legend><div className="mode-options"><button type="button" disabled={locked||submitting} className={`mode-option ${locationMode==='gps'?'selected':''}`} aria-pressed={locationMode==='gps'} onClick={()=>setLocationMode('gps')}><Crosshair size={21} aria-hidden="true"/><span><strong>GPS perangkat</strong><small>Diminta setelah laporan aktif.</small></span>{locationMode==='gps'&&<CheckCircle size={20} weight="fill"/>}</button><button type="button" disabled={locked||submitting} className={`mode-option ${locationMode==='simulation'?'selected':''}`} aria-pressed={locationMode==='simulation'} onClick={()=>setLocationMode('simulation')}><MapPin size={21} aria-hidden="true"/><span><strong>Titik simulasi</strong><small>Pilih titik manual pada peta.</small></span>{locationMode==='simulation'&&<CheckCircle size={20} weight="fill"/>}</button></div>{locationMode==='gps'?<p className="inline-explainer"><Info size={16}/> Browser meminta izin lokasi hanya setelah laporan aktif.</p>:<div className="sim-location-block"><LocationPicker selected={selected} onSelect={onMapSelect}/>{!selected&&<p className="field-error">Pilih titik pada peta sebelum melanjutkan.</p>}</div>}</fieldset>
           {error && <p className="form-error" role="alert"><WarningCircle size={18}/>{error}</p>}
-          <div className="submit-row"><p>Versi konfigurasi {draft?.input.configVersion ?? config?.version} · lokasi hanya untuk simulasi.</p><button type="submit" className="button button-primary" disabled={locked ? submitting : !canSubmit}>{submitting?<><CircleNotch className="spin" size={18}/> Mengirim laporan…</>:locked?<>Coba lagi dengan key yang sama <ArrowRight size={18} weight="bold"/></>:<>Aktifkan simulasi SOS <ArrowRight size={18} weight="bold"/></>}</button></div>
+          <div className="submit-row"><p>GPS dapat diaktifkan setelah laporan tersimpan.</p><button type="submit" className="button button-primary" disabled={locked ? submitting : !canSubmit}>{submitting?<><CircleNotch className="spin" size={18}/> Mengirim laporan…</>:locked?<>Coba kirim lagi <ArrowRight size={18} weight="bold"/></>:<>Kirim laporan <ArrowRight size={18} weight="bold"/></>}</button></div>
         </form>}
       </div>
     </main>
@@ -812,7 +813,7 @@ function ReportStatusPage() {
         // The withdrawal response is authoritative even if the follow-up snapshot is unavailable.
         setIncident(updated);
       }
-      setNotice("Permintaan penghentian diterima. Pelacakan berhenti; permintaan masih menunggu petugas demo.");
+      setNotice("Permintaan penghentian diterima. Pelacakan berhenti; menunggu keputusan petugas.");
     } catch (cause) {
       const status = cause instanceof DemoServiceError ? cause.status : undefined;
       const definitiveRejection = status !== undefined && status >= 400 && status < 500;
@@ -874,7 +875,7 @@ function ReportStatusPage() {
           <WarningCircle size={34} />
           <p className="eyebrow">STATUS LAPORAN TIDAK TERSEDIA</p>
           <h1>{loadError || "Laporan ini tidak tersedia."}</h1>
-          <p>Laporan demo disimpan di database staging lokal selama database dan volumenya dipertahankan. Halaman ini belum dapat membaca laporan; periksa tautan dan koneksi, lalu coba muat ulang.</p>
+          <p>Laporan disimpan di database lokal. Halaman ini belum dapat membacanya; periksa tautan dan koneksi server, lalu coba muat ulang.</p>
           {withdrawalPendingFor === token && <button className="button button-outline" onClick={() => { void handleCancel(true); }} disabled={actionPending === "withdrawal"}>{actionPending === "withdrawal" ? "Mengirim ulang permintaan…" : "Coba kirim ulang permintaan penghentian"} <ArrowRight size={18} /></button>}
           {loadError && <button className="button button-outline" onClick={() => {
             setLoading(true);
@@ -893,17 +894,17 @@ function ReportStatusPage() {
       <AppHeader title="Status laporan" />
       <div className="page-container status-container">
         <DemoNotice />
-        <div className="status-topline"><p className="eyebrow">RUANG LAPORAN DEMO</p><span>ID · {incident.id.slice(0, 8).toUpperCase()}</span></div>
+        <div className="status-topline"><p className="eyebrow">STATUS LAPORAN</p><span>ID · {incident.id.slice(0, 8).toUpperCase()}</span></div>
         <div className="status-heading">
-          <div><h1>Perkembangan<br />laporan simulasi.</h1><p>Dibuat {formatDate(incident.createdAt)}</p></div>
-          <StatusBadge status={incident.status} />
+          <div><h1>{STATUS_LABEL[incident.status]}</h1><p>Dibuat {formatDate(incident.createdAt)}</p></div><img className="topic-illustration tracking-illustration" src="/assets/tracking-editorial.png" alt="" aria-hidden="true" width="1536" height="1024" />
+          
         </div>
-        <p className="side-disclaimer" role="status">{connectionState === "online" ? "Realtime tersambung · snapshot server sudah diperbarui." : connectionState === "reconnecting" || connectionState === "connecting" ? "Menyambungkan pembaruan realtime…" : connectionState === "idle" ? "Laporan berada pada status akhir." : "Realtime offline · status terakhir tetap terlihat."}</p>
+        <p className="side-disclaimer" role="status">{connectionState === "online" ? "Status terbaru sudah dimuat." : connectionState === "reconnecting" || connectionState === "connecting" ? "Menghubungkan pembaruan status…" : connectionState === "idle" ? "Laporan berada pada status akhir." : "Koneksi terputus. Menampilkan status terakhir."}</p>
         {realtimeError && <p className="form-error" role="status"><WarningCircle size={18} /> {realtimeError}</p>}
 
         <div className="status-layout">
           <section className="status-main-panel">
-            <div className="status-section-heading"><div><p className="eyebrow">STATUS SEKARANG</p><h2>{STATUS_LABEL[incident.status]}</h2></div><span className="status-symbol"><Pulse size={21} /></span></div>
+            
             <p className="status-help">{STATUS_HELP[incident.status]}</p>
             <StatusProgress incident={incident} />
 
@@ -917,7 +918,7 @@ function ReportStatusPage() {
                   <div className="status-map"><MapView selected={incident.location} centerOnSelected /></div>
                 </>
               ) : (
-                <div className="gps-pending"><Crosshair size={19} /><div><strong>GPS belum tersedia</strong><span>Aktifkan berbagi lokasi setelah laporan simulasi aktif.</span></div></div>
+                <div className="gps-pending"><Crosshair size={19} /><div><strong>GPS belum tersedia</strong><span>Aktifkan berbagi lokasi setelah laporan tersimpan.</span></div></div>
               )}
             </div>
 
@@ -943,7 +944,7 @@ function ReportStatusPage() {
 
             {gpsError && <p className="form-error" role="status"><WarningCircle size={18} /> {gpsError}</p>}
             {notice && <p className="success-note" role="status"><CheckCircle size={18} /> {notice}</p>}
-            {withdrawalPending && <p className="success-note" role="status">{incident.withdrawalRequestedAt ? `Permintaan penghentian diterima ${formatDate(incident.withdrawalRequestedAt)}. Pelacakan sudah berhenti; permintaan masih menunggu petugas demo.` : "Permintaan penghentian sedang dikonfirmasi. Pelacakan tetap dihentikan sampai hasilnya jelas."}</p>}
+            {withdrawalPending && <p className="success-note" role="status">{incident.withdrawalRequestedAt ? `Permintaan penghentian diterima ${formatDate(incident.withdrawalRequestedAt)}. Pelacakan sudah berhenti; permintaan menunggu keputusan petugas.` : "Permintaan penghentian sedang dikonfirmasi. Pelacakan tetap dihentikan sampai hasilnya jelas."}</p>}
             {withdrawalPending && !incident.withdrawalRequestedAt && <button className="button button-outline" onClick={() => { void handleCancel(true); }} disabled={actionPending === "withdrawal"}>{actionPending === "withdrawal" ? "Mengirim ulang permintaan…" : "Coba kirim ulang permintaan penghentian"} <ArrowRight size={18} /></button>}
             {!isTerminal && !withdrawalPending && <button className="cancel-button" onClick={() => { void handleCancel(); }} disabled={actionPending !== null}>{actionPending === "withdrawal" ? "Mengirim permintaan…" : "Minta penghentian laporan"}</button>}
           </section>
@@ -954,14 +955,14 @@ function ReportStatusPage() {
               {incident.statusHistory.map((item, index) => (
                 <li key={`${item.status}-${item.changedAt}`}>
                   <span className={`history-dot ${index === incident.statusHistory.length - 1 ? "current" : ""}`} />
-                  <div><strong>{STATUS_LABEL[item.status]}</strong><span>{item.actor === "citizen" ? "Pelapor demo" : item.actor === "system" ? "Sistem staging" : "Petugas demo"} · {formatDate(item.changedAt)}</span></div>
+                  <div><strong>{STATUS_LABEL[item.status]}</strong><span>{item.actor === "citizen" ? "Pelapor" : item.actor === "system" ? "Sistem lokal" : "Petugas"} · {formatDate(item.changedAt)}</span></div>
                 </li>
               ))}
             </ol>
             {incident.assignment && <div className="assigned-unit"><span>STATUS PENETAPAN</span><strong>Unit simulasi telah dipilih</strong><small>Tidak ada unit nyata yang dihubungi.</small></div>}
             <button className="button button-outline full-width" onClick={copyLink}>Salin tautan status</button>
-            <p className="side-disclaimer">Status ini berasal dari server staging lokal. Laporan tersimpan pada database demo; tidak ada layanan darurat yang menerima atau memprosesnya.</p>
-            <Link className="side-dashboard-link" to="/dashboard/login">Buka dashboard demo <ArrowRight size={16} /></Link>
+            <p className="side-disclaimer">Status ini berasal dari server lokal. Laporan tidak diterima atau diproses oleh layanan darurat resmi.</p>
+            <Link className="side-dashboard-link" to="/dashboard/login">Buka dashboard petugas <ArrowRight size={16} /></Link>
           </aside>
         </div>
       </div>
@@ -978,14 +979,14 @@ function DashboardLoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const loginLock = useRef(false);
 
-  if (authChecking) return <main className="app-page"><AppHeader title="Akses petugas demo" /><div className="page-container narrow-container not-found-panel"><CircleNotch className="spin" size={30} /><h1>Memeriksa sesi petugas…</h1></div></main>;
+  if (authChecking) return <main className="app-page"><AppHeader title="Akses petugas" /><div className="page-container narrow-container not-found-panel"><CircleNotch className="spin" size={30} /><h1>Memeriksa sesi petugas…</h1></div></main>;
   if (isStaff) return <Navigate to="/dashboard" replace />;
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (loginLock.current) return;
     if (!username.trim() || !password.trim()) {
-      setError("Isi nama pengguna dan kata sandi demo.");
+      setError("Isi nama pengguna dan kata sandi.");
       return;
     }
     loginLock.current = true;
@@ -994,12 +995,12 @@ function DashboardLoginPage() {
     try {
       const authenticated = await login(username, password);
       if (!authenticated) {
-        setError("Server belum mengonfirmasi sesi petugas. Periksa kredensial demo.");
+        setError("Server belum mengonfirmasi sesi petugas. Periksa nama pengguna dan kata sandi.");
         return;
       }
       navigate("/dashboard");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Login demo belum berhasil.");
+      setError(cause instanceof Error ? cause.message : "Login belum berhasil.");
     } finally {
       loginLock.current = false;
       setSubmitting(false);
@@ -1008,21 +1009,21 @@ function DashboardLoginPage() {
 
   return (
     <main className="app-page login-page">
-      <AppHeader title="Akses petugas demo" />
+      <AppHeader title="Akses petugas" />
       <div className="login-layout page-container">
         <div className="login-copy">
-          <span className="eyebrow">AREA PETUGAS <span>·</span> SIMULASI</span>
-          <h1>Dashboard<br />petugas demo.</h1>
-          <p>Lihat laporan simulasi, tentukan unit demo, dan perbarui status dari satu tampilan.</p>
+          <span className="eyebrow">AREA PETUGAS</span>
+          <h1>Masuk sebagai petugas</h1><img className="topic-illustration access-illustration" src="/assets/access-editorial.png" alt="" aria-hidden="true" width="1536" height="1024" />
+          <p>Gunakan akun yang diberikan administrator.</p>
           <DemoNotice />
           <div className="login-visual-note"><ShieldCheck size={22} /><span>Akun staff individual hanya untuk staging sintetis. Peran dan wilayah diperiksa oleh server.</span></div>
         </div>
         <form className="login-card" onSubmit={(event) => { void handleLogin(event); }}>
           <p className="eyebrow">MASUK KE DASHBOARD</p>
-          <h2>Login simulasi</h2>
-          <p className="login-help">Gunakan akun individual yang diberikan operator administrator. Akun pertama dibuat melalui CLI; tidak ada registrasi publik.</p>
+          <h2>Masuk ke akun.</h2>
+          <p className="login-help">Masukkan nama pengguna dan kata sandi Anda.</p>
           <label className="form-label" htmlFor="staff-username">Nama pengguna staff</label>
-          <input id="staff-username" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Nama pengguna demo" required disabled={submitting} />
+          <input id="staff-username" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Nama pengguna" required disabled={submitting} />
           <label className="form-label" htmlFor="staff-password">Kata sandi staff</label>
           <input id="staff-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Kata sandi staff" required disabled={submitting} />
           {sessionRestoreError && <p className="form-error" role="status"><Info size={17} /> {sessionRestoreError}</p>}
@@ -1189,10 +1190,11 @@ function DashboardPage() {
     <header className="dashboard-header"><Brand/><div className="dashboard-head-center"><span className="live-dot"/> DASHBOARD <span className="demo-chip">STAGING</span></div><div className="dashboard-head-actions"><span className="staff-identity">{principal?.displayName} · {principal?.role}</span>{principal?.role==='operator_admin'&&<><Link className="dashboard-home-link" to="/dashboard/operations">Operasional</Link><Link className="dashboard-home-link" to="/dashboard/accounts">Akses staff</Link></>}{(principal?.role==='auditor'||principal?.role==='operator_admin')&&<><Link className="dashboard-home-link" to="/dashboard/audit">Audit</Link><Link className="dashboard-home-link" to="/dashboard/realtime">Realtime</Link></>}<Link className="dashboard-home-link" to="/dashboard/monitoring">Monitoring</Link><Link to="/" className="dashboard-home-link">Halaman warga</Link><button className="icon-button" onClick={()=>{void handleLogout();}} aria-label="Keluar"> <SignOut size={19}/></button></div></header>
     <div className="dashboard-body">
       <section className="dashboard-hero" aria-labelledby="dashboard-title">
-        <div className="dashboard-hero-copy"><p className="eyebrow">PUSAT LAPORAN · LOCAL-STAGING</p><h1 id="dashboard-title">Laporan masuk.<br/>Tindakan terarah.</h1><p className="dashboard-hero-description">Satu ruang untuk memantau lokasi, meninjau laporan, dan mengelola alur penanganan.</p><DemoNotice compact/></div>
-        <div className="dashboard-hero-art" aria-hidden="true"><img src="/assets/city-safety-hero.png" alt=""/><span className="dashboard-art-caption"><span/> PANTAU. TINJAU. TANGANI.</span></div>
+        <div className="dashboard-hero-copy"><h1 id="dashboard-title">Antrean laporan</h1><p className="dashboard-hero-description">{matchingPage.length} laporan ditampilkan · Wilayah local-staging</p><DemoNotice compact/></div>
+        <div className="dashboard-hero-art" aria-hidden="true"><img src="/assets/dashboard-city-editorial.png" alt=""/></div>
       </section>
-      <div className="dashboard-section-heading"><p className="eyebrow">01 / RINGKASAN</p><span>Antrean operasional</span></div><div className="metric-grid"><div className="metric-card"><span>Laporan aktif di halaman</span><strong>{activeCount.toString().padStart(2,'0')}</strong><small><Pulse size={14}/> Data sesuai filter</small></div><div className="metric-card"><span>GPS belum tersedia</span><strong>{gpsPending.toString().padStart(2,'0')}</strong><small><Crosshair size={14}/> Menunggu lokasi</small></div><div className="metric-card"><span>Status akhir</span><strong>{completed.toString().padStart(2,'0')}</strong><small><CheckCircle size={14}/> Dalam halaman ini</small></div><div className="metric-card metric-card-note"><div className="metric-note-mark"><MapTrifold size={20}/></div><span>Wilayah: local-staging</span><small>Tidak ada dispatch eksternal.</small></div></div>
+      {canWork&&<div className="dispatch-dashboard-link"><Link className="button button-outline" to="/dashboard/dispatch">Antrean pengiriman internal <ArrowRight size={17}/></Link></div>}
+      <div className="metric-grid"><div className="metric-card"><span>Laporan aktif di halaman</span><strong>{activeCount}</strong><small><Pulse size={14}/> Data sesuai filter</small></div><div className="metric-card"><span>GPS belum tersedia</span><strong>{gpsPending}</strong><small><Crosshair size={14}/> Menunggu lokasi</small></div><div className="metric-card"><span>Status akhir</span><strong>{completed}</strong><small><CheckCircle size={14}/> Dalam halaman ini</small></div><div className="metric-card metric-card-note"><div className="metric-note-mark"><MapTrifold size={20}/></div><span>Wilayah: local-staging</span><small>Tidak ada dispatch eksternal.</small></div></div>
       <section className="queue-filter-panel" aria-label="Filter antrian"><label>Pencarian<input className="editorial-input" value={search} onChange={e=>setSearch(e.target.value)} placeholder="ID, kategori, atau deskripsi"/></label><label>Status<select className="editorial-select" value={statusFilter} onChange={e=>{setStatusFilter(e.target.value);setCursorStack([undefined]);}}><option value="">Semua status</option>{Object.entries(STATUS_LABEL).map(([value,label])=><option value={value} key={value}>{label}</option>)}</select></label><label>Pemilik<select className="editorial-select" value={ownerFilter} onChange={e=>{setOwnerFilter(e.target.value);setCursorStack([undefined]);}}><option value="">Semua pemilik</option><option value="me">Saya</option><option value="unclaimed">Belum diklaim</option></select></label><label>Permintaan stop<select className="editorial-select" value={withdrawalFilter} onChange={e=>{setWithdrawalFilter(e.target.value);setCursorStack([undefined]);}}><option value="">Semua</option><option value="true">Menunggu keputusan</option><option value="false">Tidak menunggu</option></select></label><label>Usia laporan<select className="editorial-select" value={ageFilter} onChange={e=>{setAgeFilter(e.target.value);setCursorStack([undefined]);}}><option value="">Semua usia</option><option value="new">≤ 1 jam</option><option value="older">≥ 1 jam</option></select></label><button className="button button-outline" onClick={()=>{void refreshQueue().catch(()=>{});}}>Segarkan</button></section>
       <div className="dashboard-workspace"><section className="incident-list-panel"><div className="panel-header"><div><p className="eyebrow">ANTRIAN WILAYAH</p><h2>Laporan <span>{matchingPage.length}</span></h2></div><span className={`connection-pill connection-${connectionState}`}><span/>{connectionState==='online'?'Realtime tersambung':connectionState==='offline'?'Perlu disegarkan':'Menyinkronkan'}</span></div>
         {snapshotError&&<p className="form-error" role="alert">{snapshotError}<button className="text-link" onClick={()=>{void refreshQueue().catch(()=>{});}}>Coba lagi</button></p>}
@@ -1208,6 +1210,7 @@ function DashboardPage() {
           <div className="detail-workflow-grid"><label>Prosedur (SOP) dan versi<select className="editorial-select" value={sopChoice} onChange={e=>setSopChoice(e.target.value)} disabled={!availableSops.length||!canWork}><option value="">SOP tidak tersedia</option>{availableSops.map(sop=><option key={`${sop.id}:${sop.version}`} value={`${sop.id}:${sop.version}`}>{sop.title} · v{sop.version} · simulasi</option>)}</select></label><label>Alasan tindakan (wajib untuk beberapa aksi, maks. 500 karakter)<textarea className="editorial-input" maxLength={500} rows={2} value={reason} onChange={e=>setReason(e.target.value)} disabled={!canWork}/></label></div>
           {availableSops.find(sop=>`${sop.id}:${sop.version}`===sopChoice)&&<ol className="sop-steps">{availableSops.find(sop=>`${sop.id}:${sop.version}`===sopChoice)?.steps.map((step,index)=><li key={index}>{step}</li>)}</ol>}
           <div className="detail-actions">
+            {canWork&&<Link className="button button-outline" to={`/dashboard/dispatch?incidentId=${encodeURIComponent(selected.id)}`}>Tinjau pengiriman <ArrowRight size={16}/></Link>}
             {!canWork&&<p className="detail-muted">Peran {principal?.role} hanya dapat membaca antrian.</p>}
             {canWork&&selected.allowedActions.includes('claim')&&<button className="button button-blue" onClick={()=>void perform('claim',()=>changeIncidentOwnership(selected.id,'claim',{expectedStatus:selected.status,expectedOwnerId:selected.ownerStaffId,reason:reason.trim()||null}))}>Klaim laporan</button>}
             {canWork&&selected.allowedActions.includes('release')&&<button className="button button-outline" onClick={()=>void perform('release',()=>changeIncidentOwnership(selected.id,'release',{expectedStatus:selected.status,expectedOwnerId:selected.ownerStaffId,reason:reason.trim()||null}))}>Lepaskan klaim</button>}
@@ -1306,9 +1309,18 @@ function StaffMonitoringViewPage() {
   return <StaffMonitoringPage principal={principal} onSessionEnded={onSessionEnded} />;
 }
 
+function StaffDispatchViewPage() {
+  const {principal,markStaffLoggedOut}=useDemo();
+  const navigate=useNavigate();
+  const onSessionEnded=useCallback(()=>{markStaffLoggedOut();navigate('/dashboard/login',{replace:true});},[markStaffLoggedOut,navigate]);
+  if(!principal)return <Navigate to="/dashboard/login" replace/>;
+  if(principal.role!=='dispatcher'&&principal.role!=='supervisor')return <Navigate to="/dashboard" replace/>;
+  return <StaffDispatchPage principal={principal} onSessionEnded={onSessionEnded}/>;
+}
+
 function StaffGuard({ children }: PropsWithChildren) {
   const { isStaff, authChecking } = useDemo();
-  if (authChecking) return <main className="app-page"><AppHeader title="Dashboard petugas demo" /><div className="page-container narrow-container not-found-panel"><CircleNotch className="spin" size={30} /><h1>Memeriksa sesi petugas…</h1></div></main>;
+  if (authChecking) return <main className="app-page"><AppHeader title="Dashboard petugas" /><div className="page-container narrow-container not-found-panel"><CircleNotch className="spin" size={30} /><h1>Memeriksa sesi petugas…</h1></div></main>;
   return isStaff ? children : <Navigate to="/dashboard/login" replace />;
 }
 
@@ -1329,6 +1341,7 @@ export function App() {
           <Route path="/report/:token" element={<ReportStatusPage />} />
           <Route path="/dashboard/login" element={<DashboardLoginPage />} />
           <Route path="/dashboard/monitoring" element={<StaffGuard><StaffMonitoringViewPage /></StaffGuard>} />
+          <Route path="/dashboard/dispatch" element={<StaffGuard><StaffDispatchViewPage /></StaffGuard>} />
           <Route path="/dashboard/realtime" element={<StaffGuard><StaffOutboxViewPage /></StaffGuard>} />
           <Route path="/dashboard/audit" element={<StaffGuard><StaffAuditViewPage /></StaffGuard>} />
           <Route path="/dashboard/accounts" element={<StaffGuard><StaffAccessManagementPage /></StaffGuard>} />

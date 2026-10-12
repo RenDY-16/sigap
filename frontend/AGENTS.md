@@ -10,15 +10,15 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 
 ## Project-specific visual decisions
 
-- The user selected the warm-white editorial SIGAP demo reference saved at `/tmp/codex-clipboard-02f6cec4-d25b-4f3c-b750-f64739a80297.png` as the landing-page source of truth.
-- Keep the black oversized headline, compact top navigation, red “Mulai simulasi SOS” CTA, 3D city-and-beacon hero, and four-step “Kenali — Laporkan — Pantau — Selesai” journey.
+- The user selected the warm-white editorial SIGAP reference saved at `/tmp/codex-clipboard-02f6cec4-d25b-4f3c-b750-f64739a80297.png` as the landing-page source of truth.
+- Keep the black oversized headline, compact top navigation, red “Buat laporan” CTA, 3D city-and-beacon hero, and four-step “Kenali — Laporkan — Pantau — Selesai” journey.
 - User prefers visible scroll and 3D motion. Keep the motion tied to scroll and interaction, but preserve normal browser scrolling, keep form/status controls steady, and honor `prefers-reduced-motion`.
-- SIGAP is a placeholder label, not a finalized brand. Copy must keep stating that this is a demo and does not send real emergency assistance.
+- SIGAP is a placeholder label, not a finalized brand. On 2026-10-12 Rendy requested removing the visible word “demo”. Keep truthful copy stating that reports are stored locally and official emergency services are not connected. Internal mock dispatch and manual test locations must remain clearly marked as simulation.
 
 ## Dashboard visual alignment (2026-10-05)
 
 - Rendy requested the admin queue dashboard to match the selected landing page: warm-white canvas, oversized black Manrope headings, red accents, pill buttons, airy spacing, and the existing city illustration.
-- Keep dashboard-specific presentation in `src/dashboard.css`, scoped to `.dashboard-landing-style`; preserve the operational data and authorization flows.
+- Keep dashboard-specific presentation in `src/dashboard.css`. Shared staff shell styling uses `.dashboard-page`; queue-specific presentation uses `.dashboard-landing-style`. Preserve the operational data and authorization flows.
 - An empty location queue should show a designed empty state without requesting map tiles. Tile requests send only the origin as Referer, preserving report-token path privacy; failed tile layers stop loading and leave coordinates available.
 
 ## Realtime operator review (2026-10-12)
@@ -29,3 +29,18 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 ## Operational monitoring (2026-10-12)
 
 - /dashboard/monitoring follows warm editorial dashboard styling. Use precise counts, explicit snapshot timestamps and stale-data labels. Manual refresh and staging thresholds are not live on-call alerting or public SLA. Keep metrics region-scoped, exclude citizen content/location, distinguish server emit acceptance from browser/human receipt. UI browser rendering remains unverified.
+
+## Local phone presentation (2026-10-12)
+
+- Rendy wants reporting with device GPS and phone access without deployment. Use the existing HTTPS LAN mode; laptop and phone must share a network, and browser certificate trust plus location permission need device verification. Never equate a successful build or laptop HTTP check with verified phone GPS.
+
+## Bright white correction (2026-10-13)
+
+- Rendy explicitly wants bright white backgrounds, not warm or yellowish white. Use shared --canvas: #ffffff on landing and all dashboard pages, with neutral gray borders and gradients. This supersedes earlier warm-white canvas instructions.
+- Match landing typography and red pill actions throughout staff pages; keep operational controls readable and avoid a dark first metric card that introduces a different visual direction.
+
+## Magazine and minimalism across all pages
+
+- Rendy requests the same magazine/minimalism direction on every page, not only dashboard: bright white, black editorial headings, thin section rules, restrained red pill actions, neutral minimal form controls, and fewer rounded card containers. Use compact literal titles on task pages. Dashboard illustration is a real PNG asset, separate from live operational map data.
+
+- Use distinct thematic PNG assets: dashboard city for overview, report sheet/pencil for intake, pin/route for tracking, shield/access for login. Never reuse city illustration on every page. Illustrations are decorative and must not be mistaken for live data. Keep intake artwork small on mobile.

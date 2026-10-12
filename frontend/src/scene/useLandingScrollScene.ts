@@ -10,10 +10,21 @@ const chapters: LandingChapter[] = ["kenali", "laporkan", "pantau", "selesai"];
 
 export function useLandingScrollScene() {
   const [progress, setProgress] = useState(0);
+  const [footerVisible, setFooterVisible] = useState(false);
   const [activeChapter, setActiveChapter] = useState<LandingChapter>("kenali");
   const [reducedMotion, setReducedMotion] = useState(() =>
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
+
+  useEffect(() => {
+    const footer = document.querySelector(".landing-footer");
+    if (!footer) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      setFooterVisible(entry.isIntersecting);
+    }, { rootMargin: "0px 0px 120px 0px", threshold: 0 });
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -72,5 +83,5 @@ export function useLandingScrollScene() {
     return () => context.revert();
   }, [reducedMotion]);
 
-  return { progress, activeChapter, reducedMotion };
+  return { progress, activeChapter, reducedMotion, footerVisible };
 }

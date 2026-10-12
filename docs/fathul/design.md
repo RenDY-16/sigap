@@ -223,3 +223,20 @@ Desain siap menjadi dasar rencana implementasi ketika:
 ## 12. Langkah berikutnya
 
 Dokumen ini menjadi acuan implementasi bersama [PRD](./PRD-sistem-SOS-keamanan-publik.md) dan [implementation-plan.md](./implementation-plan.md). Implementasi lokal di [frontend/](../../frontend/) kini mencakup landing, scroll journey, alur warga, dashboard petugas, API Express, sesi demo server, dan sinkronisasi status Socket.IO. Data tetap sementara di memori server dan konfigurasi HTTPS LAN tepercaya belum disiapkan. Referensi visual terpilih menggambarkan landing; dashboard memakai susunan operasional yang lebih padat dengan bahasa visual SIGAP yang sama. Aset kota Blender/GLB yang editable tetap menjadi pekerjaan lanjutan.
+
+
+## Revisi visual 13 Oktober 2026
+
+Arahan terbaru: campuran magazine UI dan minimalism UI untuk semua halaman. Canvas putih terang #FFFFFF; hitam untuk tipografi, abu-abu netral untuk garis, merah untuk aksi utama. Hierarki editorial melalui judul, label bagian, kolom, dan garis pemisah; kontrol tetap ringkas. Judul halaman tugas memakai kalimat literal seperti “Buat laporan” dan “Akses petugas”. Arahan ini menggantikan canvas warm-white sebelumnya.
+
+### Aset sesuai topik
+
+| Halaman | Aset | Makna |
+| --- | --- | --- |
+| Landing | city-safety-hero.png / scene kota 3D yang ada | Identitas SIGAP dan konteks kota |
+| Dashboard | dashboard-city-editorial.png | Gambaran wilayah laporan |
+| Laporan baru | report-editorial.png | Dokumen kejadian dan pensil |
+| Pelacakan/status | tracking-editorial.png | Pin lokasi dan rute |
+| Login staff | access-editorial.png | Akses yang memerlukan otorisasi |
+
+Aset PNG dekoratif; tidak mewakili koordinat atau status laporan sebenarnya. Pelaporan di HP memakai ilustrasi kecil agar field tetap segera terlihat. Halaman audit, monitoring, akses staff dan konfigurasi memakai struktur teks, angka, serta ikon yang sesuai fungsi, tanpa mengulang gambar kota.

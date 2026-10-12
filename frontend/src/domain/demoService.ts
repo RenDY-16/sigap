@@ -116,7 +116,7 @@ async function request<T>(
   } catch {
     throw new DemoServiceError(
       "network",
-      "Server demo tidak dapat dijangkau. Periksa koneksi lalu coba lagi.",
+      "Server SIGAP tidak dapat dijangkau. Periksa koneksi lalu coba lagi.",
     );
   }
 
@@ -396,4 +396,20 @@ export async function retryOutboxEvent(id: string, reason: string): Promise<{ sc
 export type { OperationalSnapshot } from '../shared/monitoring';
 export async function getOperationalSnapshot(): Promise<import('../shared/monitoring').OperationalSnapshot> {
   return request('/api/staff/monitoring', { credentials: 'include', cache: 'no-store' });
+}
+
+export type {DispatchIntent,DispatchDetail,DispatchPage,DispatchScenario,DispatchStatus} from '../shared/dispatch';
+export async function listDispatchQueue(status?:import('../shared/dispatch').DispatchStatus,cursor?:string):Promise<import('../shared/dispatch').DispatchPage>{
+ const query=new URLSearchParams({limit:'25'});if(status)query.set('status',status);if(cursor)query.set('cursor',cursor);
+ return request('/api/staff/dispatch?'+query,{credentials:'include',cache:'no-store'});
+}
+export async function getDispatchDetail(id:string):Promise<import('../shared/dispatch').DispatchDetail>{
+ return request('/api/staff/dispatch/'+encodeURIComponent(id),{credentials:'include',cache:'no-store'});
+}
+export async function submitDispatchDraft(draft:import('./dispatchDraft').DispatchDraft):Promise<import('../shared/dispatch').DispatchIntent>{
+ const create=draft.action==='create';
+ const options=jsonRequest('POST',create?{scenario:draft.scenario}:{action:draft.action,reason:draft.reason});
+ const headers=new Headers(options.headers);headers.set('Idempotency-Key',draft.key);
+ const path=create?`/api/staff/incidents/${encodeURIComponent(draft.targetId)}/dispatch`:`/api/staff/dispatch/${encodeURIComponent(draft.targetId)}/review`;
+ return request(path,{...options,headers,credentials:'include'});
 }
