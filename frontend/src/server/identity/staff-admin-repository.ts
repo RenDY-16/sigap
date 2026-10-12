@@ -81,15 +81,21 @@ export function createStaffAdminRepository(pool: Pool) {
         const result = await client.query<{ id: string; region_id: string; actor_staff_id: string | null; target_staff_id: string | null; action: string; details: Record<string, unknown>; occurred_at: Date }>(
           `SELECT id,region_id,actor_staff_id,target_staff_id,action,details,occurred_at
             FROM staff_admin_audit_events WHERE region_id=ANY($1::text[])
-              AND (action='bootstrap_first_admin' OR action LIKE 'staff:%')
+              AND (action='bootstrap_first_admin' OR action LIKE 'staff:%' OR action IN ('outbox:list','outbox:retry'))
             ORDER BY occurred_at DESC,id DESC LIMIT $2`, [principal.regionIds, limit]);
         // Copy only explicitly allowed audit details. Credentials, verifiers, session
-        // payloads and request bodies can never appear in this authenticated projection.
+        // payloads and raw request bodies are not copied. Review reasons are an
+        // intentional private audit field for the specific outbox retry action.
         const allowedDetails = ['role', 'fromRole', 'regionId', 'regionIds', 'fromRegionIds', 'count', 'limit', 'access'];
-        const rows = result.rows.map(row => ({ id: row.id, regionId: row.region_id, actorStaffId: row.actor_staff_id,
-          targetStaffId: row.target_staff_id, action: row.action,
-          details: Object.fromEntries(Object.entries(row.details).filter(([key]) => allowedDetails.includes(key))),
-          occurredAt: new Date(row.occurred_at).toISOString() }));
+        const rows = result.rows.map(row => {
+          const allowed = row.action === 'outbox:retry'
+            ? ['eventId','incidentId','eventType','failedAttempts','totalFailures','reason']
+            : row.action === 'outbox:list' ? ['state','limit'] : allowedDetails;
+          return { id: row.id, regionId: row.region_id, actorStaffId: row.actor_staff_id,
+            targetStaffId: row.target_staff_id, action: row.action,
+            details: Object.fromEntries(Object.entries(row.details).filter(([key]) => allowed.includes(key))),
+            occurredAt: new Date(row.occurred_at).toISOString() };
+        });
         await audit(client, { ...access, principal }, null, 'staff:audit_access_attempt', { count: rows.length, regionIds: principal.regionIds, access: 'attempt' });
         await client.query('COMMIT');
         return rows;

@@ -20,3 +20,8 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 - Rendy requested the admin queue dashboard to match the selected landing page: warm-white canvas, oversized black Manrope headings, red accents, pill buttons, airy spacing, and the existing city illustration.
 - Keep dashboard-specific presentation in `src/dashboard.css`, scoped to `.dashboard-landing-style`; preserve the operational data and authorization flows.
 - An empty location queue should show a designed empty state without requesting map tiles. Tile requests send only the origin as Referer, preserving report-token path privacy; failed tile layers stop loading and leave coordinates available.
+
+## Realtime operator review (2026-10-12)
+
+- /dashboard/realtime keeps warm-white, black/red editorial styling aligned with the admin dashboard. Metadata-only queue cards, explicit pending/dead-letter states, pagination and required review reason; never imply a retry is confirmed delivery.
+- Auditor reads only; operator_admin schedules retries. Exact permissions and region scope remain server-enforced. Browser rendering of this new page is not yet verified.

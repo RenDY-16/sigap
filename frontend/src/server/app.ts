@@ -14,6 +14,7 @@ import { createPostgresOutboxWriter } from "./services/outbox-publisher.js";
 import type { StaffSessionManager } from "./auth/staff-session.js";
 import { createPostgresIncidentRepository } from "./store/postgres-incident-repository.js";
 import { guardStaffMutation } from "./security/staff-request-guard.js";
+import { createStaffOutboxRouter } from "./routes/outbox-review.js";
 
 export interface ApplicationRuntime {
   app: Express;
@@ -65,6 +66,7 @@ export function createApplication(config: ServerConfig, pool: Pool): Application
   app.use("/api/citizen", createCitizenIncidentsRouter(services));
   app.use("/api/operations", createPublicOperationsRouter(pool));
   app.use("/api/staff/operations", createStaffOperationsRouter(pool));
+  app.use("/api/staff/realtime", createStaffOutboxRouter(pool));
   app.use("/api/staff", staffRoutes.router);
 
   if (existsSync(config.clientDistPath)) {

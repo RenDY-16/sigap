@@ -1,6 +1,7 @@
 import type { Pool, PoolClient } from "pg";
 
 import type { PublicIncident } from "../../shared/domain.js";
+import { OUTBOX_MAX_FAILURES } from "../../shared/outbox.js";
 import type { IncidentChangeName, IncidentOutboxEvent, OutboxWriter } from "../db/contracts.js";
 
 const ALLOWED_EVENTS = new Set<IncidentChangeName>([
@@ -140,7 +141,8 @@ export function createOutboxPublisher(
       const result = await client.query<OutboxRow>(
         `SELECT id, incident_id, event, payload, attempts
            FROM outbox_events
-          WHERE published_at IS NULL AND next_attempt_at <= clock_timestamp()
+          WHERE published_at IS NULL AND dead_lettered_at IS NULL
+            AND next_attempt_at <= clock_timestamp()
           ORDER BY occurred_at, id
           LIMIT $1
           FOR UPDATE SKIP LOCKED`,
@@ -169,10 +171,12 @@ export function createOutboxPublisher(
           const delayMs = Math.min(60_000, 1_000 * (2 ** Math.min(row.attempts, 6)));
           await client.query(
             `UPDATE outbox_events SET attempts = attempts + 1,
+               failed_attempts_total = failed_attempts_total + 1,
+               dead_lettered_at = CASE WHEN attempts + 1 >= $4 THEN clock_timestamp() ELSE NULL END,
                next_attempt_at = clock_timestamp() + ($2::integer * interval '1 millisecond'),
                last_error_class = $3
              WHERE id = $1 AND published_at IS NULL`,
-            [row.id, delayMs, failureClass],
+            [row.id, delayMs, failureClass, OUTBOX_MAX_FAILURES],
           );
           logFailure(row.id, row.event, failureClass, nextAttempt);
         }

@@ -13,6 +13,7 @@ const labels: Record<string, string> = {
   'staff:enable': 'Akun diaktifkan kembali', 'staff:reset_password': 'Password direset',
   'staff:revoke_sessions': 'Semua sesi akun dicabut', 'staff:list': 'Daftar akun diakses',
   'staff:audit_access_attempt': 'Audit akses staff diminta',
+  'outbox:list': 'Metadata antrean realtime diakses', 'outbox:retry': 'Retry event realtime dijadwalkan',
   'incident:list_access_attempt': 'Daftar laporan diminta', 'incident:detail_access_attempt': 'Detail laporan diminta',
   'incident:audit_access_attempt': 'Audit laporan diminta', 'incident:status:updated': 'Status laporan diubah',
   'incident:location:updated': 'Lokasi laporan diubah', 'incident:withdrawal:requested': 'Penghentian tracking diminta',
@@ -52,7 +53,7 @@ export function StaffAuditPage({ principal, onSessionEnded, logout }: Props) {
     <header className="dashboard-header">
       <Link className="brand" to="/dashboard">SIGAP<span>STAGING</span></Link>
       <div className="dashboard-head-center">AUDIT WILAYAH <span className="demo-chip">BACA SAJA</span></div>
-      <div className="dashboard-head-actions"><span className="staff-identity">{principal.displayName} · {principal.role}</span>{principal.role === 'operator_admin' && <Link className="dashboard-home-link" to="/dashboard/accounts">Akses staff</Link>}<button className="icon-button" aria-label="Keluar dari akun staff" disabled={loggingOut} onClick={() => { void handleLogout(); }}><SignOut size={19} /></button></div>
+      <div className="dashboard-head-actions"><span className="staff-identity">{principal.displayName} · {principal.role}</span><Link className="dashboard-home-link" to="/dashboard/realtime">Realtime</Link>{principal.role === 'operator_admin' && <Link className="dashboard-home-link" to="/dashboard/accounts">Akses staff</Link>}<button className="icon-button" aria-label="Keluar dari akun staff" disabled={loggingOut} onClick={() => { void handleLogout(); }}><SignOut size={19} /></button></div>
     </header>
     <div className="dashboard-body">
       <Link className="text-link" to="/dashboard"><ArrowLeft size={17} /> Kembali ke laporan</Link>

@@ -217,3 +217,9 @@ Schema lokal terbaru v5 menambahkan throttle login PostgreSQL. Terlalu banyak pe
 ## Verifikasi Socket.IO sintetis
 
 `npm run test:realtime` menjalankan WebSocket/polling, GPS protocol dan outbox pada database sintetis sementara dan pool satu koneksi. Test melakukan fault injection audit hanya pada database miliknya, kemudian membersihkan database tersebut. Receipt pada native client tidak membuktikan browser/ponsel atau bantuan nyata. Batas bukti: docs/fathul/realtime-verification.md pada root proyek.
+
+## Review event realtime gagal
+
+Schema terbaru v6 menambahkan dead-letter dan lifetime failure count. Event berhenti setelah 8 kegagalan per siklus. Operator admin membuka /dashboard/realtime, meninjau metadata, mengisi alasan dan menjadwalkan retry; auditor membaca antrean tanpa aksi retry. Catatan muncul pada Audit. Tindakan menjadwalkan retry tidak mengonfirmasi delivery atau mengirim bantuan nyata.
+
+`npm run test:outbox-review` memeriksa cap, persistence, role/region, race retry, audit HTTP, pagination mikrodetik dan rollback saat audit gagal pada database sintetis terpisah. Detail: docs/fathul/outbox-review.md di root proyek.

@@ -141,3 +141,7 @@ Test HTTP/PostgreSQL sintetis mencakup 23 kelompok pemeriksaan: akun/role, regio
 ## Kemajuan realtime — 12 Oktober 2026
 
 Native Socket.IO WebSocket/polling dan PostgreSQL diverifikasi dengan 20 kelompok pemeriksaan. Pool berukuran satu tidak deadlock pada flow yang diuji. Fault audit mencegah partial emit dan event berhasil dicoba ulang setelah fault dilepas. GPS protocol, citizen/region isolation, replay ID/helper dedup, account/session revocation, expiry saat delivery/reconnect dan shutdown gates diperiksa. Receipt klien native bukan bukti browser/human read atau responder acknowledgement. Retry count cap/dead-letter/manual review, provider dispatch queue, browser/device dan gate fase 4–6 masih terbuka. Detail: [realtime-verification.md](./realtime-verification.md).
+
+## Kemajuan reliability realtime — 12 Oktober 2026
+
+Migration 0006, cap 8 kegagalan per siklus, dead-letter, lifetime failures, review metadata scoped dan admin retry/audit atomik telah diintegrasikan. UI berada di /dashboard/realtime. Sepuluh kelompok pemeriksaan outbox-review dan regresi workflow 23, login 11, realtime 20 berhasil; build/typecheck lulus. DB lokal schema v6 ready tanpa pending; server loopback readiness berhasil. UI browser belum diverifikasi. Lihat [outbox-review.md](./outbox-review.md). Provider dispatch subsystem, privacy lifecycle, intake controls, observability/alerts, disaster recovery, deployment dan gate pilot tetap terbuka.

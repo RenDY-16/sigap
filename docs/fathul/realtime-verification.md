@@ -53,3 +53,7 @@ Hasil lokal: exports/probes/realtime-result.json. Fault injection hanya dilakuka
 ## Pekerjaan berikutnya
 
 Tambahkan cap retry/dead-letter dan review operator untuk outbox realtime, kemudian verifikasi failure/recovery serta observability. Dispatch intent/provider queue tetap subsystem terpisah yang belum ada. Privacy lifecycle, intake abuse controls, browser/device verification, deployment dan persetujuan pilot tetap terbuka.
+
+## Pembaruan source setelah verifikasi awal
+
+Pada 12 Oktober 2026, cap retry/dead-letter/manual review diimplementasikan dengan migration 0006 dan seluruh test realtime ini dijalankan ulang berhasil. Pernyataan retry-count belum dicap di snapshot awal di atas bersifat historis. Detail terbaru: [outbox-review.md](./outbox-review.md).

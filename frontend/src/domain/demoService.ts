@@ -1,4 +1,6 @@
 import { STAFF_REQUEST_HEADER, STAFF_REQUEST_VALUE } from '../shared/request-security';
+import type { OutboxQueueState, OutboxReviewPage } from '../shared/outbox';
+export type { OutboxQueueState, OutboxReviewItem, OutboxReviewPage } from '../shared/outbox';
 import type { PublicIncident, CreateIncidentInput as SharedCreateIncidentInput, StaffIncident, WorkflowActionInput, OwnershipActionInput } from '../shared/domain';
 export type { StaffIncident, WorkflowActionInput, OwnershipActionInput } from '../shared/domain';
 import type { StaffIdentity, StaffAccount, StaffAccountInput, StaffAdminAuditEntry, IncidentAuditEntry } from '../shared/staff';
@@ -378,4 +380,15 @@ export async function listIncidentAudit(): Promise<IncidentAuditEntry[]> {
 }
 export async function listStaffAdminAudit(): Promise<StaffAdminAuditEntry[]> {
   return request<StaffAdminAuditEntry[]>('/api/staff/audit/staff?limit=100', { credentials: 'include' });
+}
+
+export async function listOutboxEvents(state: OutboxQueueState, cursor?: string): Promise<OutboxReviewPage> {
+  const query = new URLSearchParams({ state, limit: '25' });
+  if (cursor) query.set('cursor', cursor);
+  return request<OutboxReviewPage>(`/api/staff/realtime/outbox?${query}`, { credentials: 'include', cache: 'no-store' });
+}
+export async function retryOutboxEvent(id: string, reason: string): Promise<{ scheduled: true; eventId: string }> {
+  return request(`/api/staff/realtime/outbox/${encodeURIComponent(id)}/retry`, {
+    ...jsonRequest('POST', { reason }), credentials: 'include',
+  });
 }
