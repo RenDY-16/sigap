@@ -1,7 +1,7 @@
 import "dotenv/config";
 
 import { spawn } from "node:child_process";
-import { createReadStream, createWriteStream } from "node:fs";
+import { createReadStream } from "node:fs";
 import { access, chmod, link, mkdtemp, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -35,9 +35,6 @@ function run(binary: string, args: string[], options: { env?: NodeJS.ProcessEnv;
 
     if (options.inputPath && child.stdin) {
       void pipeline(createReadStream(options.inputPath), child.stdin).catch(() => child.kill("SIGTERM"));
-    }
-    if (options.outputPath && child.stdout) {
-      void pipeline(child.stdout, createWriteStream(options.outputPath, { mode: 0o600, flags: "wx" })).catch(() => child.kill("SIGTERM"));
     }
   });
 }
@@ -133,21 +130,27 @@ async function backup(artifactArg: string): Promise<void> {
   await assertOwnedContainer();
   const tempDirectory = await mkdtemp(path.join(path.dirname(destination), ".sigap-backup-"));
   await chmod(tempDirectory, 0o700);
-  const passphraseFile = await writePassphraseFile(tempDirectory, passphrase);
   const partial = path.join(tempDirectory, "archive.gpg");
   try {
+    const passphraseFile = await writePassphraseFile(tempDirectory, passphrase);
     const env = { ...process.env, PGPASSWORD: database.password };
     const dump = spawn("podman", ["exec", "--env", "PGPASSWORD", containerName, "pg_dump", "--format=custom", "--no-owner", "--no-privileges", "--host=127.0.0.1", "--port=5432", "--username=sigap_dev", `--dbname=${database.database}`], { shell: false, env, stdio: ["ignore", "pipe", "ignore"] });
     const encrypt = spawn("gpg2", [...gpgArgs(passphraseFile, "encrypt"), "--output", partial], { shell: false, stdio: ["pipe", "ignore", "ignore"] });
     const failures: Error[] = [];
     dump.once("error", () => failures.push(new Error("Database backup could not be started.")));
     encrypt.once("error", () => failures.push(new Error("Backup encryption could not be started.")));
-    dump.stdout.pipe(encrypt.stdin);
+    let pipeFailed = false;
+    const pipe = pipeline(dump.stdout, encrypt.stdin).catch(() => {
+      pipeFailed = true;
+      dump.kill("SIGTERM");
+      encrypt.kill("SIGTERM");
+    });
     const [dumpCode, encryptCode] = await Promise.all([
       new Promise<number | null>((resolve) => dump.once("close", resolve)),
       new Promise<number | null>((resolve) => encrypt.once("close", resolve)),
     ]);
-    if (failures.length || dumpCode !== 0 || encryptCode !== 0) fail("Backup creation failed; no backup was published.");
+    await pipe;
+    if (failures.length || pipeFailed || dumpCode !== 0 || encryptCode !== 0) fail("Backup creation failed; no backup was published.");
     await chmod(partial, 0o600);
     await link(partial, destination);
     console.log("Encrypted staging backup created.");
