@@ -253,20 +253,6 @@ function LandingPage() {
         </a>
       </section>
 
-      <div className="journey-progress" hidden={footerVisible} aria-label={`Tahap aktif: ${steps.find((step) => step.id === activeChapter)?.label}`}>
-        {steps.map((step, index) => (
-          <a
-            key={step.id}
-            className={`journey-step ${activeChapter === step.id ? "is-active" : ""} ${steps.findIndex((item) => item.id === activeChapter) > index ? "is-complete" : ""}`}
-            href={step.id === "kenali" ? "#kenali" : `#${step.id}`}
-            aria-current={activeChapter === step.id ? "step" : undefined}
-          >
-            <span className="journey-step-label">{step.label}</span>
-            <span className="journey-step-track"><span /></span>
-          </a>
-        ))}
-      </div>
-
       <section className="journey-intro" id="alur-sos" aria-labelledby="journey-title">
         <p className="eyebrow">ALUR PELAPORAN</p>
         <h2 id="journey-title">Cara membuat laporan</h2>
