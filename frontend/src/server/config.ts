@@ -29,11 +29,11 @@ export function loadDatabaseConfig(env: NodeJS.ProcessEnv = process.env): Pick<S
   if (!databaseUrl) throw new ServerConfigError("Set DATABASE_URL in the server-only environment.");
   try {
     const url = new URL(databaseUrl);
-    if (!["postgres:", "postgresql:"].includes(url.protocol) || !url.hostname || !url.pathname.slice(1)) {
+    if (!["postgres:", "postgresql:", "mysql:", "mariadb:"].includes(url.protocol) || !url.hostname || !url.pathname.slice(1)) {
       throw new Error("invalid database URL");
     }
   } catch {
-    throw new ServerConfigError("DATABASE_URL must be a PostgreSQL connection URL with a host and database name.");
+    throw new ServerConfigError("DATABASE_URL must be a PostgreSQL or MySQL/MariaDB connection URL with a host and database name.");
   }
   const databasePoolMax = Number(env.DATABASE_POOL_MAX?.trim() || "10");
   if (!Number.isInteger(databasePoolMax) || databasePoolMax < 1 || databasePoolMax > 50) {

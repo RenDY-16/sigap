@@ -44,3 +44,7 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 - Rendy requests the same magazine/minimalism direction on every page, not only dashboard: bright white, black editorial headings, thin section rules, restrained red pill actions, neutral minimal form controls, and fewer rounded card containers. Use compact literal titles on task pages. Dashboard illustration is a real PNG asset, separate from live operational map data.
 
 - Use distinct thematic PNG assets: dashboard city for overview, report sheet/pencil for intake, pin/route for tracking, shield/access for login. Never reuse city illustration on every page. Illustrations are decorative and must not be mistaken for live data. Keep intake artwork small on mobile.
+
+## XAMPP portability
+
+- Rendy wants minimal manual environment setup when moving laptops. Use npm run xampp / npm run xampp:lan with automatic private config, random session secret, fresh MariaDB schema and interactive first admin. Preserve existing .env unless explicitly reconfiguring. Never claim XAMPP runtime verified until MariaDB actually runs. PostgreSQL remains supported.

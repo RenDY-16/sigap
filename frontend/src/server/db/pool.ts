@@ -1,4 +1,5 @@
 import pg from "pg";
+import { createMysqlDatabasePool } from "./mysql-pool.js";
 import type { ServerConfig } from "../config.js";
 
 export type { Pool, PoolClient } from "pg";
@@ -8,6 +9,7 @@ type DatabasePoolConfig = Pick<ServerConfig, "databaseUrl"> &
 
 /** One pool per server process; inject it into every persistence component. */
 export function createDatabasePool(config: DatabasePoolConfig): pg.Pool {
+  if (/^(mysql|mariadb):/.test(config.databaseUrl)) return createMysqlDatabasePool(config);
   const pool = new pg.Pool({
     connectionString: config.databaseUrl,
     max: config.databasePoolMax ?? 10,

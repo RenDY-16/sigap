@@ -28,7 +28,10 @@
     "test:dispatch": "tsx tests/dispatch.integration.mts",
     "test:dispatch-worker": "tsx tests/dispatch-worker.integration.mts",
     "test:dispatch-runtime": "tsx tests/dispatch-runtime.integration.mts",
-    "test:dispatch-ui": "tsx tests/dispatch-ui.test.mts"
+    "test:dispatch-ui": "tsx tests/dispatch-ui.test.mts",
+    "setup:xampp": "tsx scripts/setup-xampp.mts",
+    "xampp": "node scripts/start-xampp.mjs",
+    "xampp:lan": "node scripts/start-xampp.mjs --lan"
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.3.0",
@@ -41,11 +44,13 @@
     "express-session": "^1.19.0",
     "gsap": "^3.15.0",
     "leaflet": "^1.9.4",
+    "mysql2": "^3.24.5",
     "pg": "^8.23.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.18.4",
+    "selfsigned": "^5.5.0",
     "socket.io": "^4.8.4",
     "socket.io-client": "^4.8.4",
     "three": "^0.186.1",

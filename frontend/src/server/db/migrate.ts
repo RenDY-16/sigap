@@ -4,6 +4,8 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Pool, PoolClient } from "pg";
+import { isMysqlPool } from "./mysql-pool.js";
+import { getMysqlMigrationStatus, applyMysqlMigrations } from "./mysql-migrate.js";
 import { loadDatabaseConfig } from "../config.js";
 import { closeDatabasePool, createDatabasePool } from "./pool.js";
 
@@ -79,6 +81,7 @@ async function withMigrationLock<T>(pool: Pool, operation: (client: PoolClient) 
 }
 
 export async function getMigrationStatus(pool: Pool): Promise<MigrationStatus> {
+  if (isMysqlPool(pool)) return getMysqlMigrationStatus(pool);
   const migrations = await readMigrations();
   return withMigrationLock(pool, async (client) => {
     const applied = await readApplied(client);
@@ -89,6 +92,7 @@ export async function getMigrationStatus(pool: Pool): Promise<MigrationStatus> {
 }
 
 export async function runMigrations(pool: Pool): Promise<{ applied: string[]; currentVersion: string }> {
+  if (isMysqlPool(pool)) return applyMysqlMigrations(pool);
   const migrations = await readMigrations();
   return withMigrationLock(pool, async (client) => {
     const existing = await readApplied(client);
