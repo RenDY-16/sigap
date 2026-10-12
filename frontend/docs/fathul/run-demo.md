@@ -213,3 +213,7 @@ Schema lokal terbaru v5 menambahkan throttle login PostgreSQL. Terlalu banyak pe
 ## Verifikasi workflow pada database terpisah
 
 `npm run test:incident-workflow` menjalankan walkthrough warga–petugas melalui HTTP dan PostgreSQL pada database sintetis sementara milik test. Cakupan mencakup create retry, role/region, claim/release/takeover, lifecycle/eskalasi, withdrawal, pagination/filter, snapshot config, redaksi, sesi dan persistence saat app dibuat ulang. Test membersihkan database miliknya; tidak memakai laporan/akun staging. Batas bukti terdapat di docs/fathul/workflow-verification.md pada root proyek.
+
+## Verifikasi Socket.IO sintetis
+
+`npm run test:realtime` menjalankan WebSocket/polling, GPS protocol dan outbox pada database sintetis sementara dan pool satu koneksi. Test melakukan fault injection audit hanya pada database miliknya, kemudian membersihkan database tersebut. Receipt pada native client tidak membuktikan browser/ponsel atau bantuan nyata. Batas bukti: docs/fathul/realtime-verification.md pada root proyek.

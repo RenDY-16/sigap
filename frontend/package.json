@@ -18,7 +18,8 @@
     "db:status": "tsx src/server/db/migrate.ts status",
     "staff:bootstrap": "tsx scripts/bootstrap-first-admin.ts",
     "test:login-throttle": "tsx tests/login-throttle.integration.mts",
-    "test:incident-workflow": "tsx tests/incident-workflow.integration.mts"
+    "test:incident-workflow": "tsx tests/incident-workflow.integration.mts",
+    "test:realtime": "tsx tests/realtime.integration.mts"
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.3.0",

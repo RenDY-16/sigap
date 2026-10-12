@@ -137,3 +137,7 @@ Migration 0005 menyediakan bucket persisten, counter saturasi, expiry dan cleanu
 ## Kemajuan walkthrough — 12 Oktober 2026
 
 Test HTTP/PostgreSQL sintetis mencakup 23 kelompok pemeriksaan: akun/role, region boundary, create retry/concurrency, ownership race/release/takeover, config version/pinned SOP/required fields, lifecycle/escalation/referral, roster availability, withdrawal accept/deny dan tracking stop, public/outbox redaction, cursor/filter, audit, app/pool recreation dan account disable. Seluruhnya berhasil. Ini memperkuat bukti runtime fase 1–3 pada cakupan test; browser, GPS perangkat, delivery/replay/revocation socket, restore drill serta gate fase 4–6 masih belum selesai. Detail: [workflow-verification.md](./workflow-verification.md).
+
+## Kemajuan realtime — 12 Oktober 2026
+
+Native Socket.IO WebSocket/polling dan PostgreSQL diverifikasi dengan 20 kelompok pemeriksaan. Pool berukuran satu tidak deadlock pada flow yang diuji. Fault audit mencegah partial emit dan event berhasil dicoba ulang setelah fault dilepas. GPS protocol, citizen/region isolation, replay ID/helper dedup, account/session revocation, expiry saat delivery/reconnect dan shutdown gates diperiksa. Receipt klien native bukan bukti browser/human read atau responder acknowledgement. Retry count cap/dead-letter/manual review, provider dispatch queue, browser/device dan gate fase 4–6 masih terbuka. Detail: [realtime-verification.md](./realtime-verification.md).
