@@ -34,7 +34,7 @@ Ikuti langkah berikut berurutan untuk menjalankan SIGAP di laptop. XAMPP menyedi
    npm --version
    ```
 
-   Di Windows jalankan PowerShell sebagai Administrator untuk perintah pembaruan. Jika Node.js dikelola dengan nvm, jalankan perintah pembaruan tanpa `sudo`.
+   Di Windows jalankan PowerShell sebagai Administrator dan gunakan `npm install --global npm@10.5.1` tanpa `sudo`. Jika Node.js dikelola dengan nvm, jalankan perintah pembaruan tanpa `sudo`.
 
 ### 2. Clone repository
 
@@ -57,7 +57,7 @@ npm run xampp
 Perintah pertama memasang paket aplikasi sesuai lockfile. Perintah kedua menjalankan wizard setup, migrasi database, build frontend, lalu memulai server. Saat wizard berjalan:
 
 1. Masukkan password database XAMPP untuk user `root`. Pada sebagian instalasi XAMPP lokal password root kosong; tekan **Enter** hanya jika akun Anda memang tidak memakai password. Input password tidak terlihat saat diketik.
-2. Wizard menguji koneksi dan membuat database baru bernama `sigap`, lalu mengisi tabel yang diperlukan.
+2. Wizard menguji koneksi dan versi server terlebih dahulu. Oracle MySQL ditolak sebelum perubahan database. Jika database `sigap` sudah ada dan bisa diakses, wizard memakainya; jika belum ada, wizard membuatnya lalu mengisi tabel yang diperlukan.
 3. Jika database belum memiliki administrator, ikuti prompt untuk membuat username, nama tampilan, dan password admin. Tentukan password sendiri dan simpan dengan aman; tidak ada password admin bawaan.
 4. Setup membuat `frontend/.env` dengan konfigurasi koneksi serta secret sesi acak. Setelah itu proses membangun aplikasi dan menyalakan server.
 
@@ -129,9 +129,11 @@ Jangan pindahkan atau bagikan `.env`, password database, `SESSION_SECRET`, serti
 
 ## Pemecahan masalah
 
+Setup memeriksa Node.js/npm dan versi server MariaDB, lalu membedakan kegagalan koneksi, login, izin database, dan tahap migrasi. Launcher juga memeriksa port aplikasi sebelum setup. Pesan tidak mencetak password, URL koneksi, atau SQL sensitif. Jika perlu mengganti akun/port pada `.env` yang sudah ada, tambahkan `--reconfigure` pada perintah setup; opsi akun baru tanpa flag tersebut tidak mengganti konfigurasi tersimpan.
+
 - **`Could not read package.json`** — terminal berada di folder yang salah. Jalankan `cd sigap/frontend`, lalu ulangi perintah npm.
 - **Koneksi database gagal** — pastikan MySQL XAMPP berstatus Running; cocokkan host, port, username, dan password yang dimasukkan.
-- **Tidak dapat membuat database** — akun MySQL yang dipakai perlu izin `CREATE DATABASE`; gunakan akun lokal yang berwenang atau buat database kosong `sigap` terlebih dahulu melalui phpMyAdmin, lalu jalankan setup dengan user yang dapat mengaksesnya.
+- **Tidak dapat membuat database** — akun MariaDB yang dipakai perlu izin membuat database jika database belum ada. Alternatifnya, buat database kosong `sigap` melalui administrator terlebih dahulu dan berikan akun aplikasi izin pada `sigap.*`; wizard memakai database yang sudah tersedia.
 - **Port 3001 sudah dipakai** — hentikan proses SIGAP lama atau ubah `PORT` di `.env`, lalu jalankan kembali.
 - **Admin tidak bisa dibuat** — setup admin pertama memerlukan terminal interaktif; jalankan `npm run staff:bootstrap` dari `frontend`.
 - **HP tidak dapat mengakses** — jalankan `npm run xampp:lan`, periksa IP yang tercetak, Wi-Fi, firewall, dan peringatan sertifikat browser.

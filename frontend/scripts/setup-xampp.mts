@@ -3,15 +3,15 @@ import { readFile, writeFile, access, mkdir, copyFile, chmod } from 'node:fs/pro
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { createInterface } from 'node:readline/promises';
 import { spawn } from 'node:child_process';
 import { networkInterfaces } from 'node:os';
 import { X509Certificate } from 'node:crypto';
-import mysql from 'mysql2/promise';
+import mysql, { type RowDataPacket } from 'mysql2/promise';
 import { parse } from 'dotenv';
 import { generate } from 'selfsigned';
 import { createDatabasePool, closeDatabasePool } from '../src/server/db/pool.js';
 import { runMigrations } from '../src/server/db/migrate.js';
+import { SetupError, checkRuntime, checkDatabaseVersion, describeSetupError } from './setup-diagnostics.mts';
 
 const directory=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 process.chdir(directory);
@@ -39,18 +39,22 @@ async function lanCertificates(env:Record<string,string>):Promise<void>{
  let reusable=false;
  try{const cert=new X509Certificate(await readFile(certPath));await access(keyPath);reusable=new Date(cert.validTo).getTime()>Date.now()+86400000&&addresses.every(ip=>Boolean(cert.checkIP(ip)));}catch{}
  if(!reusable){
-  const pems=await generate([{name:'commonName',value:'SIGAP local LAN'}],{keySize:2048,algorithm:'sha256',notAfterDate:new Date(Date.now()+30*86400000),extensions:[{name:'basicConstraints',cA:false},{name:'keyUsage',digitalSignature:true,keyEncipherment:true},{name:'extKeyUsage',serverAuth:true},{name:'subjectAltName',altNames:[{type:2,value:'localhost'},{type:7,ip:'127.0.0.1'},...addresses.map(ip=>({type:7,ip}))]}]});
+  const pems=await generate([{name:'commonName',value:'SIGAP local LAN'}],{keySize:2048,algorithm:'sha256',notAfterDate:new Date(Date.now()+30*86400000),extensions:[{name:'basicConstraints',cA:false},{name:'keyUsage',digitalSignature:true,keyEncipherment:true},{name:'extKeyUsage',serverAuth:true},{name:'subjectAltName',altNames:[{type:2,value:'localhost'},{type:7,ip:'127.0.0.1'},...addresses.map(ip=>({type:7 as const,ip}))]}]});
   await writeFile(certPath,pems.cert,{mode:0o600});await writeFile(keyPath,pems.private,{mode:0o600});
  }
  env.HOST='0.0.0.0';env.LAN_DEMO='1';env.TLS_CERT_PATH=certPath;env.TLS_KEY_PATH=keyPath;
  for(const ip of addresses)console.log(`Akses HP: https://${ip}:${env.PORT||3001}`);
  console.log('Sertifikat lokal dibuat otomatis. Browser HP tetap perlu mempercayai sertifikat dan memberi izin GPS.');
 }
+let stage = 'pemeriksaan runtime';
 try{
+ checkRuntime(process.versions.node, process.env.npm_config_user_agent);
+ stage = 'konfigurasi';
  let previous:string|undefined;try{previous=await readFile('.env','utf8');}catch(error){if((error as {code?:string}).code!=='ENOENT')throw error;}
  let env=previous?parse(previous):{};
  if(previous&&!options.reconfigure&&!/^(mysql|mariadb):/.test(env.DATABASE_URL??''))throw new Error('Existing .env uses another database. Run npm run setup:xampp -- --reconfigure to make a private backup and configure XAMPP.');
  if(!previous||options.reconfigure){
+  if(!process.stdin.isTTY)throw new SetupError('Setup pertama memerlukan terminal interaktif untuk memasukkan password database.');
   if(!/^[A-Za-z0-9_]{1,64}$/.test(options.database!))throw new Error('Invalid database name. Use letters, numbers and underscores.');
   const password=await askPassword();
   const url=new URL('mysql://127.0.0.1');url.hostname=options.host!;url.port=options.port!;url.username=options.user!;url.password=password;url.pathname='/'+options.database!;
@@ -59,20 +63,34 @@ try{
  if(!env.SESSION_SECRET||Buffer.byteLength(env.SESSION_SECRET)<32)env.SESSION_SECRET=randomBytes(32).toString('hex');
  const url=new URL(env.DATABASE_URL);if(!['mysql:','mariadb:'].includes(url.protocol))throw new Error('XAMPP setup requires mysql:// or mariadb://.');
  const database=decodeURIComponent(url.pathname.slice(1));if(!/^[A-Za-z0-9_]{1,64}$/.test(database))throw new Error('Invalid database name.');
+ stage = 'koneksi database';
  const connection=await mysql.createConnection({host:url.hostname,port:Number(url.port||3306),user:decodeURIComponent(url.username),password:decodeURIComponent(url.password),connectTimeout:5000});
- try{await connection.query('CREATE DATABASE IF NOT EXISTS `'+database+'` CHARACTER SET utf8mb4 COLLATE utf8mb4_nopad_bin');}finally{await connection.end();}
+ try{
+  const [rows] = await connection.query<RowDataPacket[]>('SELECT VERSION() AS version');
+  checkDatabaseVersion(String(rows[0]?.version ?? ''));
+  console.log('Server MariaDB kompatibel.');
+  stage = 'pemilihan database';
+  try { await connection.query('USE `'+database+'`'); }
+  catch (error) {
+   if ((error as {code?:string}).code !== 'ER_BAD_DB_ERROR') throw error;
+   stage = 'pembuatan database';
+   await connection.query('CREATE DATABASE `'+database+'` CHARACTER SET utf8mb4 COLLATE utf8mb4_nopad_bin');
+  }
+ }finally{await connection.end();}
  if(options.lan)await lanCertificates(env);
  if(previous&&options.reconfigure){await mkdir('backups/private',{recursive:true,mode:0o700});const backup='backups/private/env-before-xampp-'+Date.now()+'.env';await copyFile('.env',backup);await chmod(backup,0o600);}
  // JSON quoting is understood by dotenv and preserves spaces/URL metacharacters.
  const contents=Object.entries(env).map(([key,value])=>`${key}=${JSON.stringify(value)}`).join('\n')+'\n';
  if(!previous)await writeFile('.env',contents,{flag:'wx',mode:0o600});else if(options.reconfigure||options.lan||contents!==previous)await writeFile('.env',contents,{mode:0o600});
  Object.assign(process.env,env);
+ stage = 'migrasi database';
  const pool=createDatabasePool({databaseUrl:env.DATABASE_URL,databasePoolMax:Number(env.DATABASE_POOL_MAX||10)});
  let hasAdmin=false;
  try{const result=await runMigrations(pool);console.log(`Database XAMPP siap. Schema versi ${result.currentVersion}.`);hasAdmin=Boolean((await pool.query("SELECT 1 FROM staff_accounts WHERE role='operator_admin' LIMIT 1")).rowCount);}finally{await closeDatabasePool(pool);}
+ stage = 'pembuatan administrator';
  if(!hasAdmin){if(!process.stdin.isTTY)throw new Error('First admin requires an interactive terminal. Run npm run staff:bootstrap.');await command(['run','staff:bootstrap']);}
  console.log('Konfigurasi lokal tersimpan. Tidak perlu mengisi .env satu per satu.');
 }catch(error){
- const message=error instanceof Error&&/^(Existing \.env|Invalid database|XAMPP setup|First admin|No LAN|Setup cancelled)/.test(error.message)?error.message:'Setup XAMPP belum selesai. Pastikan MySQL XAMPP aktif, port dan akun benar, serta akun boleh membuat database.';
- console.error(message);process.exitCode=1;
+ const known = error instanceof Error && /^(Existing \.env|Invalid database|XAMPP setup|First admin|No LAN|Setup cancelled)/.test(error.message);
+ console.error(known ? error.message : describeSetupError(error, stage));process.exitCode=1;
 }
