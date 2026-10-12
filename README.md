@@ -1,113 +1,123 @@
 # SIGAP
 
-SIGAP adalah aplikasi web pelaporan dan pemantauan insiden keselamatan. Warga dapat mengirim laporan dengan lokasi GPS perangkat; petugas dapat meninjau dan memperbarui status laporan. Aplikasi ini memerlukan server Node.js. XAMPP menyediakan MariaDB untuk penyimpanan data.
+SIGAP adalah aplikasi web pelaporan dan pemantauan insiden keselamatan. Warga dapat mengirim laporan dengan lokasi GPS perangkat, sedangkan petugas dapat meninjau dan memperbarui status laporan.
 
-> **Batas layanan:** instalasi mandiri ini tidak terhubung ke layanan darurat resmi dan tidak mengirim petugas. Jangan gunakan untuk menggantikan panggilan ke layanan darurat setempat.
+> **Batas layanan:** instalasi ini tidak terhubung ke layanan darurat resmi dan tidak mengirim petugas. Jangan gunakan untuk menggantikan panggilan ke layanan darurat setempat.
 
-## Isi repository
+## Setup dari awal (Windows atau Linux + XAMPP)
 
-- `frontend/` — aplikasi React/Vite, backend Express/Socket.IO, serta skrip setup dan migrasi.
-- `docs/fathul/` — PRD, desain, panduan penggunaan, dan catatan teknis.
+Ikuti langkah berikut berurutan untuk menjalankan SIGAP di laptop. XAMPP menyediakan MariaDB yang biasanya ditampilkan sebagai layanan **MySQL**. SIGAP tetap berjalan melalui Node.js; menyalin source ke `htdocs` saja tidak cukup. Apache tidak diperlukan kecuali ingin memakai phpMyAdmin.
 
-## Setup cepat dengan XAMPP
+### 1. Pasang dan nyalakan prasyarat
 
-Ikuti bagian ini untuk instalasi baru di Windows atau Linux. XAMPP menyediakan MariaDB yang panelnya biasa memberi nama layanan **MySQL**. Apache tidak diperlukan untuk menjalankan SIGAP; nyalakan Apache hanya jika ingin memakai phpMyAdmin.
+1. Pasang **Node.js versi LTS** (npm disertakan bersama Node.js).
+2. Pasang **XAMPP** yang menyertakan MariaDB.
+3. Buka XAMPP Control Panel (Windows) atau panel XAMPP (Linux), lalu tekan **Start** pada **MySQL**. Catat portnya; default biasanya `3306`.
+4. Pastikan status MySQL sudah **Running**. SIGAP dan database harus berada di laptop yang sama untuk setup lokal ini.
 
-### 1. Pasang prasyarat
+### 2. Clone repository
 
-1. Pasang **Node.js versi LTS** beserta npm.
-2. Pasang XAMPP yang menyertakan MariaDB.
-3. Buka XAMPP Control Panel (Windows) atau panel/manager XAMPP (Linux), lalu nyalakan **MySQL**. Catat portnya; biasanya `3306`.
-4. Pastikan MySQL/MariaDB XAMPP berjalan sebelum melanjutkan. Database harus dapat diakses lokal di laptop yang menjalankan SIGAP.
-
-### 2. Unduh source code
-
-Pilih salah satu cara berikut.
-
-**Dengan Git:**
+Buka terminal (Windows: PowerShell atau Command Prompt; Linux: Terminal), lalu jalankan:
 
 ```bash
 git clone https://github.com/RenDY-16/sigap.git
 cd sigap/frontend
 ```
 
-**Tanpa Git:** buka [repository SIGAP](https://github.com/RenDY-16/sigap), pilih **Code → Download ZIP**, ekstrak ZIP, lalu buka terminal di folder `sigap/frontend`.
+Pastikan folder aktif adalah `frontend` dan di dalamnya ada `package.json`. Semua perintah `npm` pada panduan ini harus dijalankan dari folder tersebut. Jika Git belum terpasang, unduh ZIP dari [repository SIGAP](https://github.com/RenDY-16/sigap), ekstrak, lalu buka terminal pada folder hasil ekstraksi `sigap/frontend`.
 
-> Semua perintah `npm` berikut dijalankan dari folder `frontend`, yaitu folder yang berisi `package.json`. Jangan jalankan dari folder home atau `htdocs`.
-
-### 3. Instal dependensi dan konfigurasi database
+### 3. Instal paket dan jalankan setup pertama
 
 ```bash
 npm ci
-npm run setup:xampp
-```
-
-Wizard setup akan:
-
-- meminta password database lokal jika diminta (pada beberapa instalasi XAMPP lokal akun `root` tidak memakai password; tekan Enter hanya jika memang kosong);
-- membuat database baru bernama `sigap`;
-- membuat file `.env` lokal dengan secret sesi acak;
-- menjalankan migrasi tabel aplikasi;
-- meminta pembuatan akun administrator pertama jika database belum memilikinya.
-
-Isi sendiri username, nama, dan password administrator di terminal. Repository tidak menyediakan password admin bawaan. Simpan kredensial itu secara aman. File `.env` lokal tidak masuk Git.
-
-Jika wizard menyatakan database tidak dapat dihubungi, periksa bahwa MySQL XAMPP sedang menyala, lalu cocokkan port dan akun database. Untuk port atau nama database khusus, jalankan setup dengan opsi, misalnya:
-
-```bash
-npm run setup:xampp -- --port 3307 --user root --database sigap
-```
-
-Wizard meminta password saat perlu. Jika XAMPP memakai host database selain `127.0.0.1`, tambahkan `--host HOST_DATABASE`. Jalankan wizard lagi hanya jika perlu mengubah konfigurasi yang sudah dibuat.
-
-### 4. Jalankan SIGAP
-
-```bash
 npm run xampp
 ```
 
-Perintah ini menyiapkan konfigurasi bila belum ada, menjalankan pemeriksaan migrasi, membangun frontend, lalu menyalakan server. Buka:
+Perintah pertama memasang paket aplikasi sesuai lockfile. Perintah kedua menjalankan wizard setup, migrasi database, build frontend, lalu memulai server. Saat wizard berjalan:
 
-- Halaman warga: <http://127.0.0.1:3001/>
+1. Masukkan password database XAMPP untuk user `root`. Pada sebagian instalasi XAMPP lokal password root kosong; tekan **Enter** hanya jika akun Anda memang tidak memakai password. Input password tidak terlihat saat diketik.
+2. Wizard menguji koneksi dan membuat database baru bernama `sigap`, lalu mengisi tabel yang diperlukan.
+3. Jika database belum memiliki administrator, ikuti prompt untuk membuat username, nama tampilan, dan password admin. Tentukan password sendiri dan simpan dengan aman; tidak ada password admin bawaan.
+4. Setup membuat `frontend/.env` dengan konfigurasi koneksi serta secret sesi acak. Setelah itu proses membangun aplikasi dan menyalakan server.
+
+Biarkan terminal tetap terbuka. Jika wizard gagal, baca bagian pemecahan masalah di bawah. Jangan menjalankan perintah dari `/home/nama-user`, root repository, atau `htdocs`; jalankan dari `sigap/frontend`.
+
+### 4. Buka dan cek website di laptop
+
+Setelah terminal menunjukkan server berjalan, buka browser pada laptop yang sama:
+
+- Halaman pelaporan warga: <http://127.0.0.1:3001/>
 - Login petugas/admin: <http://127.0.0.1:3001/dashboard/login>
 
-Biarkan terminal dan XAMPP tetap berjalan saat menggunakan aplikasi. Hentikan server dengan `Ctrl+C`; database dapat tetap berjalan di XAMPP.
+Untuk mematikan server tekan `Ctrl+C` pada terminal. Untuk menjalankan kembali, pastikan MySQL XAMPP aktif, masuk lagi ke folder `sigap/frontend`, lalu jalankan `npm run xampp`.
 
-### 5. Akses dari HP pada Wi-Fi yang sama
+## Isi file `.env`
 
-Di terminal folder `frontend`, jalankan:
+Untuk instalasi baru dengan XAMPP, Anda **tidak perlu membuat atau mengisi `.env` secara manual**. Perintah `npm run xampp` membuat file tersebut otomatis. Bentuk nilai standarnya seperti berikut (password dan secret sengaja berupa placeholder; gunakan nilai yang dibuat wizard):
+
+```dotenv
+DATABASE_URL=mysql://root:PASSWORD_DATABASE@127.0.0.1:3306/sigap
+DATABASE_POOL_MAX=10
+HOST=127.0.0.1
+PORT=3001
+SESSION_SECRET=SECRET_ACAK_MINIMAL_32_BYTE
+LAN_DEMO=0
+TLS_CERT_PATH=
+TLS_KEY_PATH=
+VITE_DEMO_MAP_CENTER_LAT=0
+VITE_DEMO_MAP_CENTER_LNG=0
+VITE_MAP_TILE_URL=https://tile.openstreetmap.org/{z}/{x}/{y}.png
+VITE_MAP_ATTRIBUTION=© OpenStreetMap contributors
+```
+
+`DATABASE_URL` memakai password root XAMPP yang Anda masukkan; jika password kosong bagian `:PASSWORD_DATABASE` juga kosong. `SESSION_SECRET` dibuat otomatis dan berbeda untuk tiap laptop. Jangan memakai teks placeholder di atas sebagai nilai sungguhan, jangan bagikan file `.env`, dan jangan commit file itu ke Git.
+
+### Jika port, host, atau user MySQL berbeda
+
+Jika MySQL XAMPP menggunakan port bukan `3306`, jalankan setup dengan nilai yang benar. Contoh port `3307`:
+
+```bash
+npm run setup:xampp -- --host 127.0.0.1 --port 3307 --user root --database sigap
+npm run xampp
+```
+
+Ganti host/user/database sesuai konfigurasi XAMPP Anda. Wizard akan meminta password database. Database baru harus kosong dan akun database perlu izin membuat database. Jika `.env` yang ada memakai PostgreSQL, setup tidak menimpanya diam-diam. Untuk beralih secara sengaja gunakan `npm run setup:xampp -- --reconfigure`; konfigurasi lama disimpan di backup privat. Data PostgreSQL tidak dikonversi.
+
+## Akses dari HP pada Wi-Fi yang sama
+
+Jalankan perintah ini dari terminal `sigap/frontend`:
 
 ```bash
 npm run xampp:lan
 ```
 
-Perintah ini membuat sertifikat HTTPS lokal untuk alamat IP laptop dan menyalakan server agar dapat diakses di jaringan lokal. Terminal menampilkan URL yang perlu dibuka di HP, biasanya berbentuk `https://ALAMAT-IP-LAPTOP:3001`.
+Perintah tersebut menyiapkan HTTPS lokal, lalu build dan menyalakan server. Buka alamat HTTPS yang dicetak terminal di HP, misalnya `https://192.168.1.20:3001`.
 
-1. Hubungkan HP dan laptop ke jaringan Wi-Fi yang sama.
-2. Buka URL HTTPS yang dicetak oleh perintah.
-3. Terima/percayai sertifikat lokal pada browser jika diminta, kemudian beri izin lokasi untuk situs tersebut.
-4. Jika halaman tidak terbuka, izinkan koneksi masuk untuk Node.js/port `3001` pada firewall laptop dan pastikan jaringan Wi-Fi mengizinkan perangkat saling terhubung.
+1. Hubungkan laptop dan HP ke Wi-Fi yang sama.
+2. Ketik alamat IP persis seperti yang dicetak oleh terminal.
+3. Jika browser memberi peringatan sertifikat lokal, percayai/lanjutkan sesuai pilihan browser. Beri izin lokasi saat diminta.
+4. Jika alamat tidak terbuka, izinkan Node.js atau port aplikasi `3001` di firewall laptop untuk jaringan privat dan pastikan router mengizinkan komunikasi antarperangkat.
 
-Jangan membuka port database `3306` ke Wi-Fi; hanya aplikasi di port `3001` yang perlu diakses HP. Akses lokasi GPS pada browser memerlukan konteks aman HTTPS. Sertifikat yang dibuat lokal mungkin tetap menampilkan peringatan sampai dipercaya pada perangkat.
+Browser membutuhkan HTTPS untuk akses GPS. Sertifikat dibuat lokal dan mungkin perlu dipercaya pada HP. Jangan membuka port database `3306` ke jaringan; HP mengakses aplikasi di port `3001`. Server dan terminal laptop harus tetap berjalan saat HP mengakses website.
 
-## Memindahkan instalasi ke laptop lain
+## Menyalin project ke laptop lain
 
-Pindahkan atau unduh source code, lalu ulangi langkah setup di atas. Di laptop baru, pasang Node.js dan XAMPP, nyalakan MySQL, kemudian jalankan `npm ci` dan `npm run xampp` dari `frontend`. Wizard membuat konfigurasi dan admin lokal baru.
+Di laptop baru, pasang Node.js dan XAMPP, nyalakan layanan MySQL, clone repository, lalu ulangi langkah 2–4. `npm ci` memasang paket, dan wizard membuat `.env`, database/tabel, secret sesi, serta admin lokal baru. Menyalin folder kode tidak membawa isi database laptop lama. Jika perlu membawa data, ekspor database MariaDB lama melalui phpMyAdmin atau `mariadb-dump`, lalu impor secara sengaja ke MariaDB laptop baru.
 
-Menyalin folder kode **tidak memindahkan isi database**. Untuk membawa data lama, ekspor database MariaDB dari laptop lama melalui phpMyAdmin atau `mariadb-dump`, lalu impor ke MariaDB laptop baru sesuai kebutuhan. Jangan membagikan file `.env`, password database, secret sesi, sertifikat privat, atau backup database publik.
+Jangan pindahkan atau bagikan `.env`, password database, `SESSION_SECRET`, sertifikat privat dalam `.local-certs`, atau backup database tanpa perlindungan.
 
-## Setup alternatif: PostgreSQL
+## Pemecahan masalah
 
-Repository juga mendukung setup pengembangan PostgreSQL yang sudah ada. Panduan rinci tersedia di [`docs/fathul/run-demo.md`](docs/fathul/run-demo.md). Perintah `db:up`, `db:down`, dan `db:backup` adalah helper PostgreSQL, bukan untuk database XAMPP.
+- **`Could not read package.json`** — terminal berada di folder yang salah. Jalankan `cd sigap/frontend`, lalu ulangi perintah npm.
+- **Koneksi database gagal** — pastikan MySQL XAMPP berstatus Running; cocokkan host, port, username, dan password yang dimasukkan.
+- **Tidak dapat membuat database** — akun MySQL yang dipakai perlu izin `CREATE DATABASE`; gunakan akun lokal yang berwenang atau buat database kosong `sigap` terlebih dahulu melalui phpMyAdmin, lalu jalankan setup dengan user yang dapat mengaksesnya.
+- **Port 3001 sudah dipakai** — hentikan proses SIGAP lama atau ubah `PORT` di `.env`, lalu jalankan kembali.
+- **Admin tidak bisa dibuat** — setup admin pertama memerlukan terminal interaktif; jalankan `npm run staff:bootstrap` dari `frontend`.
+- **HP tidak dapat mengakses** — jalankan `npm run xampp:lan`, periksa IP yang tercetak, Wi-Fi, firewall, dan peringatan sertifikat browser.
+- **Migrasi gagal sebagian** — jangan hapus database yang berisi data penting. Catat pesan terminal dan periksa database sebelum mencoba memperbaiki atau membuat ulang database kosong.
 
-## Catatan dukungan dan pemecahan masalah
+## Dukungan database dan dokumentasi
 
-- Target XAMPP adalah MariaDB `10.4+`; kompatibilitas Oracle MySQL 8 belum diverifikasi.
-- Database tujuan untuk setup awal harus kosong. Jangan arahkan ke database yang sudah dipakai aplikasi lain.
-- Data PostgreSQL lama tidak dikonversi otomatis ke MariaDB.
-- Jika port `3001` sudah dipakai, hentikan aplikasi lain atau ubah `PORT` di `.env`, lalu jalankan ulang.
-- Jika setup berhenti karena migrasi parsial, baca pesan terminal sebelum mencoba lagi. Jangan hapus database yang berisi data penting.
-- Untuk masalah akses HP, pastikan alamat IP laptop masih sama, kedua perangkat ada di Wi-Fi yang sama, server berjalan dengan mode `xampp:lan`, dan firewall mengizinkan port aplikasi.
-- XAMPP lokal belum dijalankan pada saat panduan ini ditulis; setup koneksi MariaDB dan izin GPS HP tetap perlu dikonfirmasi di perangkat tujuan.
+Setup XAMPP menargetkan MariaDB `10.4+`; kompatibilitas Oracle MySQL 8 belum diverifikasi. Data PostgreSQL lama tidak dikonversi otomatis. Perintah `db:up`, `db:down`, dan `db:backup` adalah helper PostgreSQL, bukan helper XAMPP.
 
-Panduan rinci XAMPP: [`docs/fathul/xampp.md`](docs/fathul/xampp.md). PRD dan desain: [`docs/fathul/`](docs/fathul/).
+Panduan teknis XAMPP: [`docs/fathul/xampp.md`](docs/fathul/xampp.md). Panduan PostgreSQL: [`docs/fathul/run-demo.md`](docs/fathul/run-demo.md). PRD, desain, dan catatan teknis lainnya: [`docs/fathul/`](docs/fathul/).
