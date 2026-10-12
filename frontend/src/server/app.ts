@@ -1,3 +1,4 @@
+import { guardCitizenIntake } from "./security/intake-throttle.js";
 import express, { type ErrorRequestHandler, type Express } from "express";
 import { existsSync } from "node:fs";
 import path from "node:path";
@@ -46,6 +47,8 @@ export function createApplication(config: ServerConfig, pool: Pool): Application
     next();
   });
   app.use("/api/staff", guardStaffMutation);
+  // Count malformed create attempts before body parsing or session/incident work.
+  app.post("/api/citizen/incidents", guardCitizenIntake(pool, config.sessionSecret));
   app.use(express.json({ limit: "8kb", strict: true }));
   app.use(staffRoutes.sessions.middleware);
 

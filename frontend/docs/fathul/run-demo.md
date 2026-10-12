@@ -223,3 +223,7 @@ Schema lokal terbaru v5 menambahkan throttle login PostgreSQL. Terlalu banyak pe
 Schema terbaru v6 menambahkan dead-letter dan lifetime failure count. Event berhenti setelah 8 kegagalan per siklus. Operator admin membuka /dashboard/realtime, meninjau metadata, mengisi alasan dan menjadwalkan retry; auditor membaca antrean tanpa aksi retry. Catatan muncul pada Audit. Tindakan menjadwalkan retry tidak mengonfirmasi delivery atau mengirim bantuan nyata.
 
 `npm run test:outbox-review` memeriksa cap, persistence, role/region, race retry, audit HTTP, pagination mikrodetik dan rollback saat audit gagal pada database sintetis terpisah. Detail: docs/fathul/outbox-review.md di root proyek.
+
+## Intake create protection — 12 Oktober 2026
+
+Migration 0007 menambahkan request budget persisten PostgreSQL untuk POST laporan warga: sumber koneksi 120/60 detik, token normalisasi 10/60 detik. HTTP 429 menyertakan Retry-After; storage limiter tidak tersedia menghasilkan 503. Ambang staging dan direct ingress saja; proxy dan trafik layanan nyata masih perlu assessment. Gunakan `npm run db:migrate`, `npm run db:status`, serta `npm run test:intake-throttle` untuk verifikasi sintetis. Rincian ada di `docs/fathul/intake-throttle.md` pada root workspace.

@@ -145,3 +145,7 @@ Native Socket.IO WebSocket/polling dan PostgreSQL diverifikasi dengan 20 kelompo
 ## Kemajuan reliability realtime — 12 Oktober 2026
 
 Migration 0006, cap 8 kegagalan per siklus, dead-letter, lifetime failures, review metadata scoped dan admin retry/audit atomik telah diintegrasikan. UI berada di /dashboard/realtime. Sepuluh kelompok pemeriksaan outbox-review dan regresi workflow 23, login 11, realtime 20 berhasil; build/typecheck lulus. DB lokal schema v6 ready tanpa pending; server loopback readiness berhasil. UI browser belum diverifikasi. Lihat [outbox-review.md](./outbox-review.md). Provider dispatch subsystem, privacy lifecycle, intake controls, observability/alerts, disaster recovery, deployment dan gate pilot tetap terbuka.
+
+## Intake create protection — 12 Oktober 2026
+
+Migration 0007 menambahkan request budget persisten PostgreSQL untuk POST laporan warga: sumber koneksi 120/60 detik, token normalisasi 10/60 detik. HTTP 429 menyertakan Retry-After; storage limiter tidak tersedia menghasilkan 503. Ambang staging dan direct ingress saja; proxy dan trafik layanan nyata masih perlu assessment. Gunakan `npm run db:migrate`, `npm run db:status`, serta `npm run test:intake-throttle` untuk verifikasi sintetis. Rincian ada di `docs/fathul/intake-throttle.md` pada root workspace.
