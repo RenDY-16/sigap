@@ -1,3 +1,4 @@
+import { STAFF_REQUEST_HEADER, STAFF_REQUEST_VALUE } from '../shared/request-security';
 import type { PublicIncident, CreateIncidentInput as SharedCreateIncidentInput, StaffIncident, WorkflowActionInput, OwnershipActionInput } from '../shared/domain';
 export type { StaffIncident, WorkflowActionInput, OwnershipActionInput } from '../shared/domain';
 import type { StaffIdentity, StaffAccount, StaffAccountInput, StaffAdminAuditEntry, IncidentAuditEntry } from '../shared/staff';
@@ -102,7 +103,12 @@ async function request<T>(
 ): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(path, options);
+    const method = (options.method ?? "GET").toUpperCase();
+    const headers = new Headers(options.headers);
+    if (/^\/api\/staff(?:\/|$)/.test(path) && !["GET", "HEAD", "OPTIONS"].includes(method)) {
+      headers.set(STAFF_REQUEST_HEADER, STAFF_REQUEST_VALUE);
+    }
+    response = await fetch(path, { ...options, headers });
   } catch {
     throw new DemoServiceError(
       "network",

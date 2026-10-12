@@ -123,3 +123,9 @@ Build yang berhasil, login yang bekerja, peta yang tampil, atau database yang pe
 - [Arsitektur operasional](./operational-architecture-draft.md)
 - [Analisis gap](./full-feature-gap-analysis.md)
 - [Plan fase pertama](../superpowers/plans/2026-10-03-sigap-durable-incident-core.md)
+
+## Kemajuan keamanan — 12 Oktober 2026
+
+Guard request staf kini mencakup login/logout, akun, konfigurasi dan mutasi workflow: header `X-SIGAP-Request: staff` wajib; Origin yang ada harus sama dengan host/protokol koneksi; Fetch Metadata lintas situs maupun same-site sibling ditolak. Handshake Engine.IO juga menolak origin browser berbeda sebelum session middleware. Tidak ada izin CORS baru atau trust terhadap forwarded headers. API staf memakai Cache-Control no-store dan response memakai nosniff.
+
+Typecheck lulus. Probe HTTP/Engine.IO terisolasi dengan database yang sengaja tidak tersedia memeriksa 13 skenario, semuanya sesuai hasil yang diharapkan. Semua request yang ditolak guard menghasilkan nol akses DB pada probe. Probe tidak membuktikan login dengan akun, transaksi PostgreSQL, browser, HTTPS atau reverse proxy. Detail di [catatan keamanan request](./staff-request-security.md). Ini menyelesaikan sebagian kontrol fase 5; fase 4–6 serta verifikasi end-to-end tetap belum selesai.

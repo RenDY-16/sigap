@@ -13,6 +13,7 @@ import { createIncidentService, type IncidentServices } from "./services/inciden
 import { createPostgresOutboxWriter } from "./services/outbox-publisher.js";
 import type { StaffSessionManager } from "./auth/staff-session.js";
 import { createPostgresIncidentRepository } from "./store/postgres-incident-repository.js";
+import { guardStaffMutation } from "./security/staff-request-guard.js";
 
 export interface ApplicationRuntime {
   app: Express;
@@ -35,8 +36,15 @@ export function createApplication(config: ServerConfig, pool: Pool): Application
   app.disable("x-powered-by");
   app.use((_request, response, next) => {
     response.setHeader("Referrer-Policy", "no-referrer");
+    response.setHeader("X-Content-Type-Options", "nosniff");
     next();
   });
+  // Reject unsafe cookie-authenticated requests before body/session/DB work.
+  app.use("/api/staff", (_request, response, next) => {
+    response.setHeader("Cache-Control", "no-store");
+    next();
+  });
+  app.use("/api/staff", guardStaffMutation);
   app.use(express.json({ limit: "8kb", strict: true }));
   app.use(staffRoutes.sessions.middleware);
 

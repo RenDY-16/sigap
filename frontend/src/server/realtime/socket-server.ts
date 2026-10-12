@@ -19,6 +19,7 @@ import type { IncidentServices } from "../services/incident-service.js";
 import type { StaffSessionManager } from "../auth/staff-session.js";
 import { hasStaffCapability, lockStaffAccess } from "../identity/staff-policy.js";
 import { STAFF_ADMIN_ADVISORY_LOCK_KEY } from "../identity/staff-repository.js";
+import { isAllowedRequestOrigin } from "../security/request-origin.js";
 
 function staffRegionRoom(regionId: string): string {
   return `staff:region:${regionId}:incidents`;
@@ -68,6 +69,14 @@ export function attachSocketServer(
       response: ServerResponse,
       next: (error?: any) => void,
     ) => {
+      const fetchSite = request.headers["sec-fetch-site"];
+      const secure = Boolean((request.socket as typeof request.socket & { encrypted?: boolean }).encrypted);
+      if (Array.isArray(fetchSite) || !isAllowedRequestOrigin(
+        request.headers.origin, fetchSite, request.headers.host, secure,
+      )) {
+        next(new Error("Socket request origin was not accepted."));
+        return;
+      }
       sessionMiddleware(request as unknown as Request, response as unknown as Response, next);
     },
   );
