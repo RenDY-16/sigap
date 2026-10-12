@@ -4,16 +4,37 @@ SIGAP adalah aplikasi web pelaporan dan pemantauan insiden keselamatan. Warga da
 
 > **Batas layanan:** instalasi ini tidak terhubung ke layanan darurat resmi dan tidak mengirim petugas. Jangan gunakan untuk menggantikan panggilan ke layanan darurat setempat.
 
-## Setup dari awal (Windows atau Linux + XAMPP)
+## Sebelum mulai: database yang didukung
+
+Backend database MySQL pada repository ini saat ini **khusus untuk MariaDB 10.4 atau lebih baru**. XAMPP memakai MariaDB, walaupun tombol servicenya berlabel **MySQL**.
+
+> **Jangan gunakan `sudo apt install mysql-server` untuk setup ini.** Paket itu memasang Oracle MySQL Server, bukan MariaDB. SIGAP belum mendukung Oracle MySQL 8; mengganti nama user, password, atau hak akses saja tidak akan memperbaikinya. Jika sudah memasang MySQL Server, pilih MariaDB melalui XAMPP untuk mengikuti panduan di bawah, atau gunakan panduan PostgreSQL. Jangan hapus/mengganti database lama sebelum membuat backup.
+
+## Setup dari awal (Windows atau Linux + XAMPP/MariaDB)
 
 Ikuti langkah berikut berurutan untuk menjalankan SIGAP di laptop. XAMPP menyediakan MariaDB yang biasanya ditampilkan sebagai layanan **MySQL**. SIGAP tetap berjalan melalui Node.js; menyalin source ke `htdocs` saja tidak cukup. Apache tidak diperlukan kecuali ingin memakai phpMyAdmin.
 
 ### 1. Pasang dan nyalakan prasyarat
 
-1. Pasang **Node.js versi LTS** (npm disertakan bersama Node.js).
+1. Pasang **Node.js 22 atau lebih baru** beserta npm.
 2. Pasang **XAMPP** yang menyertakan MariaDB.
 3. Buka XAMPP Control Panel (Windows) atau panel XAMPP (Linux), lalu tekan **Start** pada **MySQL**. Catat portnya; default biasanya `3306`.
 4. Pastikan status MySQL sudah **Running**. SIGAP dan database harus berada di laptop yang sama untuk setup lokal ini.
+5. Periksa versi runtime di terminal:
+
+   ```bash
+   node --version
+   npm --version
+   ```
+
+   Pastikan Node.js `v22` atau lebih baru dan npm `10.5.1` atau lebih baru. Jika Node.js Anda sudah sesuai tetapi npm masih versi lama (contohnya npm `9.2.0`), perbarui npm sebelum memasang paket:
+
+   ```bash
+   sudo npm install --global npm@10.5.1
+   npm --version
+   ```
+
+   Di Windows jalankan PowerShell sebagai Administrator untuk perintah pembaruan. Jika Node.js dikelola dengan nvm, jalankan perintah pembaruan tanpa `sudo`.
 
 ### 2. Clone repository
 
@@ -118,6 +139,6 @@ Jangan pindahkan atau bagikan `.env`, password database, `SESSION_SECRET`, serti
 
 ## Dukungan database dan dokumentasi
 
-Setup XAMPP menargetkan MariaDB `10.4+`; kompatibilitas Oracle MySQL 8 belum diverifikasi. Data PostgreSQL lama tidak dikonversi otomatis. Perintah `db:up`, `db:down`, dan `db:backup` adalah helper PostgreSQL, bukan helper XAMPP.
+Setup ini menargetkan MariaDB `10.4+` melalui XAMPP. **Oracle MySQL 8 tidak didukung saat ini.** Data PostgreSQL lama tidak dikonversi otomatis. Perintah `db:up`, `db:down`, dan `db:backup` adalah helper PostgreSQL, bukan helper XAMPP.
 
 Panduan teknis XAMPP: [`docs/fathul/xampp.md`](docs/fathul/xampp.md). Panduan PostgreSQL: [`docs/fathul/run-demo.md`](docs/fathul/run-demo.md). PRD, desain, dan catatan teknis lainnya: [`docs/fathul/`](docs/fathul/).
