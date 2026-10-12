@@ -85,42 +85,9 @@ Sesi menggunakan cookie HttpOnly, SameSite=Lax, dan Secure ketika HTTPS dikonfig
 
 ## Backup, restore, dan reset data sintetis
 
-Backup demo tetap dapat memuat deskripsi dan koordinat simulasi. Simpan file hanya di folder lokal dengan akses terbatas, jangan commit atau kirim. Jangan melakukan backup data nyata dengan alur staging ini.
+Backup staging dapat memuat deskripsi dan koordinat simulasi. Gunakan hanya alur terenkripsi di [runbook backup dan pemulihan](./database-backup.md); jangan commit atau kirim hasilnya. Alur ini menolak database selain PostgreSQL lokal milik SIGAP dan tidak boleh dipakai untuk data nyata.
 
-```sh
-set -eu
-umask 077
-backup_dir="$HOME/Documents/sigap-staging-backups"
-mkdir -p "$backup_dir"
-chmod 700 "$backup_dir"
-backup_file="$backup_dir/sigap-staging-$(date +%Y%m%d-%H%M%S)-$$.dump"
-backup_tmp="${backup_file}.partial"
-trap 'rm -f -- "$backup_tmp"' EXIT HUP INT TERM
-podman exec sigap-postgres18-local pg_dump -U sigap_dev -d sigap_staging --format=custom > "$backup_tmp"
-test -s "$backup_tmp"
-mv -- "$backup_tmp" "$backup_file"
-trap - EXIT HUP INT TERM
-printf 'Backup tersimpan: %s\n' "$backup_file"
-```
-
-Untuk latihan restore, pulihkan ke database pemeriksaan terpisah agar data staging yang sedang dipakai tidak tertimpa:
-
-```sh
-set -eu
-read -r -p "Path backup yang akan dipulihkan: " backup_file
-test -s "$backup_file"
-podman exec sigap-postgres18-local createdb -U sigap_dev sigap_restore_check
-podman exec -i sigap-postgres18-local pg_restore --exit-on-error -U sigap_dev -d sigap_restore_check --no-owner --no-privileges < "$backup_file"
-podman exec sigap-postgres18-local psql -v ON_ERROR_STOP=1 -U sigap_dev -d sigap_restore_check -c 'select current_database(), (select count(*) from incidents) as incidents, (select count(*) from schema_migrations) as migrations;'
-```
-
-Restore menggunakan `set -e`, sehingga kegagalan membuat database menghentikan blok sebelum `pg_restore`. Setelah query verifikasi menunjukkan database `sigap_restore_check` dan jumlah baris insiden dan migrasi yang sesuai dengan backup, bersihkan hanya database latihan tersebut:
-
-```sh
-podman exec sigap-postgres18-local dropdb -U sigap_dev --if-exists sigap_restore_check
-```
-
-Jangan menjalankan cleanup atau restore terhadap `sigap_staging` jika ada laporan yang ingin dipertahankan. Untuk mengulang demo dari data kosong, buat dan verifikasi backup dulu, hentikan aplikasi, lalu pastikan target volume benar. `npm run db:down` hanya menghapus container dan **mempertahankan** `sigap-postgres18-data`; perintah itu bukan reset data. Penghapusan named volume menghilangkan seluruh database secara permanen dan tidak tersedia sebagai perintah reset otomatis pada script proyek.
+`npm run db:down` hanya menghapus container dan **mempertahankan** `sigap-postgres18-data`; perintah itu bukan reset data. Penghapusan named volume menghilangkan seluruh database secara permanen dan tidak tersedia sebagai perintah reset otomatis pada script proyek.
 
 ## Jalankan server
 
@@ -188,11 +155,11 @@ Create warga menyematkan config version. Jika terjadi timeout atau hasil belum p
 - Akun staf individual ini tetap identitas staging lokal; organisasi/role final, wilayah nyata, provisioning/recovery owner, IdP/MFA, persistent login throttle, kebijakan audit/retensi dan CSRF/security assessment masih perlu keputusan serta hardening sebelum penggunaan non-sintetis.
 - Sertifikat `mkcert` hanya untuk development. Simpan private key server dan CA root dengan aman; `.local-certs` diabaikan Git.
 
-## Batas verifikasi pembaruan 3 Oktober 2026
+## Batas verifikasi historis — 3 Oktober 2026
 
 Fase 3 Task 1–4 source terintegrasi di workspace utama dan telah direview secara independen/scoped dengan perbaikan sebelum integrasi. TypeScript check dan production build lulus pada pemeriksaan sebelumnya dengan warning bundle utama sekitar 1.62 MB; empat protected Sites hashes tetap sama dengan baseline pada pemeriksaan tersebut. Migration 0001–0004 kini berhasil diterapkan; schema v4 tidak memiliki migration pending.
 
-Tidak ada tests ditambahkan/dijalankan. PostgreSQL startup, migration execution, server startup/readiness, `GET /`, `/api/healthz` dan `/api/readyz` berhasil pada staging sintetis lokal. Browser preview belum terverifikasi. Auth/role/region enforcement, business SQL/transaksi, queue pagination, socket invalidation, retry/conflict, withdrawal stop, backup/restore, dan tampilan Editorial-UI tetap belum diverifikasi saat runtime. Pemeriksaan dasar ini bukan status kesiapan produksi.
+Catatan ini merekam bukti yang tersedia saat dokumen ditulis dan bukan status runtime terbaru. Tes sintetis workflow, realtime, throttle, monitoring, serta backup/restore telah ditambahkan kemudian dan diringkas pada roadmap serta analisis gap root. Browser preview dan operasi produksi tetap belum terverifikasi; lihat dokumen-dokumen tersebut untuk batas bukti terbaru.
 
 Provider contract/adapter masih fase 4; privacy lifecycle, retensi, security hardening, anti-abuse fase 5; observability, reliability, deployment dan pilot gate fase 6. Perlu keputusan serta artefak eksternal: organisasi/operator dan pemilik teknis, wilayah/yurisdiksi, SOP, roster/shift, kanal resmi dan kontrak acknowledgment, kredensial/sandbox, fallback resmi, privacy/retention policy, legal/security sign-off, target SLO/RPO/RTO, on-call, biaya/hosting dan uji penerimaan bersama responder. Hingga semua itu tersedia, tetap gunakan data sintetis staging saja; SIGAP belum siap untuk bantuan darurat nyata.
 

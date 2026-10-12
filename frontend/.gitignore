@@ -9,3 +9,6 @@ dist/
 *.cer
 *.p12
 *.pfx
+backups/
+*.dump
+*.gpg

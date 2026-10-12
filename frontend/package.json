@@ -16,13 +16,15 @@
     "db:down": "node scripts/dev-database.mjs down",
     "db:migrate": "tsx src/server/db/migrate.ts migrate",
     "db:status": "tsx src/server/db/migrate.ts status",
+    "db:backup": "tsx scripts/database-backup.mts",
     "staff:bootstrap": "tsx scripts/bootstrap-first-admin.ts",
     "test:login-throttle": "tsx tests/login-throttle.integration.mts",
     "test:incident-workflow": "tsx tests/incident-workflow.integration.mts",
     "test:realtime": "tsx tests/realtime.integration.mts",
     "test:outbox-review": "tsx tests/outbox-review.integration.mts",
     "test:intake-throttle": "tsx tests/intake-throttle.integration.mts",
-    "test:monitoring": "tsx tests/monitoring.integration.mts"
+    "test:monitoring": "tsx tests/monitoring.integration.mts",
+    "test:database-backup": "tsx tests/database-backup.integration.mts"
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.3.0",

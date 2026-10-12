@@ -1,7 +1,7 @@
 # Roadmap Implementasi SIGAP Operasional
 
-**Tanggal:** 3 Oktober 2026  
-**Status:** Fase 1–3 source terintegrasi. Pada 3 Oktober 2026, migration 0001–0004 berhasil diterapkan ke database PostgreSQL staging sintetis lokal; `db:status` melaporkan schema v4 dan `pending: []`. Server startup, `GET /`, `/api/healthz`, dan `/api/readyz` memberi HTTP 200. Typecheck/build sebelumnya lulus dengan warning bundle JavaScript utama sekitar 1.62 MB. Workflow transaksi, auth/role, Socket.IO delivery, UI/browser, restart/restore dan walkthrough belum diverifikasi. Review fase 3 source telah diperbaiki/review ulang.  
+**Tanggal pembaruan:** 12 Oktober 2026  
+**Status:** Fase 1–3 source terintegrasi. Migration 0001–0007 tersedia dan endpoint readiness pada 12 Oktober 2026 mengonfirmasi schema version 7. Workflow HTTP/PostgreSQL sintetis (23 kelompok), Socket.IO (20 kelompok), outbox review (10), intake protection (11), monitoring (12), dan backup/restore terenkripsi lokal terverifikasi sesuai catatan masing-masing. Backup/restore drill memakai database unik sintetis dan tidak menyentuh staging aktif. UI/browser, GPS perangkat, dispatch nyata, privacy lifecycle, security/privacy sign-off, offsite backup, retensi/key lifecycle, WAL/PITR, alerts/on-call, load/failure, RPO/RTO, deployment, dan pilot readiness belum diverifikasi.  
 **Arah yang dikonfirmasi:** platform operasional berbasis dispatcher manusia; integrasi dispatch resmi dilakukan setelah instansi, kanal, dan kontraknya tersedia.
 
 **Runtime staging yang diverifikasi 3 Oktober 2026:** `GET /` 200; `/api/healthz` 200; `/api/readyz` 200 dengan schema version 4; `/api/operations/public-config` 200 dan hanya memberi config publik simulasi yang di-allowlist; `/api/staff/incidents` dan `/api/staff/operations/config` tanpa sesi memberi 401 `staff_session_required`. Ini tidak memverifikasi sesi terautentikasi, RBAC/region, mutasi workflow, transaksi, Socket.IO, atau UI/browser.
@@ -111,7 +111,7 @@ Fase 1 adalah dasar persistence untuk fase 2–6. Fase 2 mendahului akses data o
 
 ## Batas verifikasi saat ini
 
-Fase 1–3 source terintegrasi. Typecheck/build sebelumnya lulus dengan warning bundle utama sekitar 1.62 MB; empat protected Sites files sebelumnya cocok dengan hash baseline. Database staging sintetis lokal menjalankan migration 0001–0004; `db:status` menunjukkan schema v4 tanpa pending. Server startup, halaman root, health/readiness, public config allowlisted dan penolakan route staff tanpa sesi telah diverifikasi sesuai status di atas. Tidak ada tests ditambahkan atau dijalankan. Business workflow/transactions, authenticated role isolation, Socket.IO delivery, browser rendering, restart/restore dan walkthrough operator/warga belum diverifikasi. Fase 4 adapter/provider contract, fase 5 privacy lifecycle/security/anti-abuse, dan fase 6 reliability/observability/deployment tetap pekerjaan berikutnya. Tidak ada responder, dispatch channel, acknowledgment responder, layanan berbayar, atau kesiapan darurat yang dipilih atau dibuktikan.
+Fase 1–3 source terintegrasi. Typecheck/build pernah lulus dengan warning bundle utama >500 kB; protected Sites files harus tetap cocok dengan hash baseline. Database lokal readiness endpoint mengonfirmasi schema v7. Workflow HTTP/PostgreSQL (23), realtime native (20), outbox review (10), intake throttle (11), monitoring (12), dan backup/restore lokal terenkripsi (integrasi end-to-end) berhasil pada cakupan masing-masing. Browser rendering, GPS perangkat, dispatch/provider nyata, privacy lifecycle, complete security assessment, alert/on-call, offsite backup dan lifecycle key/retention, WAL/PITR, cross-host recovery, RPO/RTO, deploy/rollback, serta pilot masih belum dibuktikan. Tidak ada responder, channel dispatch, acknowledgment responder, hosting berbayar atau kesiapan darurat yang dipilih atau disetujui.
 
 ## Kondisi yang belum boleh diklaim selesai
 
@@ -123,6 +123,7 @@ Build yang berhasil, login yang bekerja, peta yang tampil, atau database yang pe
 - [Arsitektur operasional](./operational-architecture-draft.md)
 - [Analisis gap](./full-feature-gap-analysis.md)
 - [Plan fase pertama](../superpowers/plans/2026-10-03-sigap-durable-incident-core.md)
+- [Runbook backup dan pemulihan staging](../../frontend/docs/fathul/database-backup.md)
 
 ## Kemajuan keamanan — 12 Oktober 2026
 
@@ -153,3 +154,7 @@ Migration 0007 menambahkan request budget persisten PostgreSQL untuk POST lapora
 ## Monitoring — 12 Oktober 2026
 
 Halaman `/dashboard/monitoring` dan `GET /api/staff/monitoring` menyediakan agregat wilayah akun staf. Ambang indikator staging: umur laporan aktif 15 menit, keterlambatan event due 2 menit. Count string menjaga presisi; tidak ada payload/lokasi dalam response. Refresh manual, belum background/on-call alerts. Gunakan `npm run test:monitoring` untuk verifikasi sintetis. Rincian dan batas bukti: `docs/fathul/monitoring.md` pada root workspace.
+
+## Backup dan pemulihan staging — 12 Oktober 2026
+
+CLI `npm run db:backup -- backup|verify|restore` dan `npm run test:database-backup` menyediakan backup GPG AES-256 dan restore ke database pemeriksaan terisolasi. Uji lokal hanya membuat/menghapus database sintetis unik, membandingkan fixture laporan dan checksum migration, serta menolak arsip rusak, overwrite, dan output di dalam repository. Tidak ada dump dari database staging aktif dalam tes. Runbook tersedia di `frontend/docs/fathul/database-backup.md`. Offsite/retention/key recovery, scheduling, WAL/PITR, alert, lintas-host dan target RPO/RTO belum tersedia; tahap ini tidak menutup kesiapan pilot/operasi nyata.

@@ -8,7 +8,7 @@
 
 Source fase 1–3 telah terintegrasi di workspace utama. Source mencakup penyimpanan PostgreSQL untuk insiden/audit/session, identitas staf individual, role dan scope wilayah sementara, konfigurasi operasi berversi, intake warga dinamis, workflow antrean, withdrawal, serta event outbox untuk realtime. TypeScript check dan production build sebelumnya lulus.
 
-Database staging sintetis lokal kini menjalankan migration 0001–0007; `db:status` melaporkan schema version 7 dan tidak ada migration pending. Server lokal merespons `GET /`, `/api/healthz`, dan `/api/readyz` dengan HTTP 200. Ini membuktikan startup dasar dan koneksi database/readiness saja. Walkthrough HTTP/PostgreSQL sintetis pada 12 Oktober 2026 berhasil untuk 23 kelompok pemeriksaan, termasuk claim race, config/version, lifecycle, withdrawal, role/region boundary, projection dan app/pool recreation. Socket.IO native WebSocket/polling diverifikasi dalam 20 kelompok pemeriksaan terpisah. UI/browser, GPS perangkat, restore dan verifikasi produksi belum tersedia. Fase dispatch adapter, privacy lifecycle, anti-abuse/security hardening, observability, backup/restore, dan deployment staging masih terbuka. Belum ada bukti organisasi/operator, instansi responder, kanal/acknowledgment contract, atau sign-off pilot.
+Database staging sintetis lokal kini menjalankan migration 0001–0007; endpoint readiness pada 12 Oktober 2026 memberi schema version 7. Backup/restore terenkripsi kini tersedia untuk PostgreSQL staging lokal dan diuji end-to-end pada database sintetis terpisah; arsip lolos integritas GPG, seluruh nilai fixture dan checksum migration cocok setelah restore. Backup offsite, retensi/key lifecycle, WAL/PITR, jadwal, alert, RPO/RTO dan verifikasi produksi belum tersedia. UI/browser, GPS perangkat dan readiness produksi juga belum diverifikasi. Fase dispatch adapter, privacy lifecycle, anti-abuse/security hardening, observability penuh, deployment staging dan pilot tetap terbuka.
 
 ## Requirement matrix
 
@@ -22,7 +22,7 @@ Database staging sintetis lokal kini menjalankan migration 0001–0007; `db:stat
 | Dispatch intent, provider adapter, acknowledgment dan dead-letter | Belum tersedia di source | Belum ada durable dispatch queue/provider contract. Outbox realtime yang ada tidak memenuhi requirement dispatch. Desain usulan ada di [spesifikasi workflow operasional](../superpowers/specs/2026-10-03-sigap-full-operational-design.md), masih menunggu persetujuan dokumen. |
 | Privacy request, retensi, ekspor, penghapusan/anonimisasi | Belum tersedia | Kebijakan dan workflow lifecycle belum ada. Durasi retensi/legal hold tidak boleh diasumsikan sebelum pemilik layanan memutuskan. |
 | Anti-abuse/security hardening | Sebagian fondasi tersedia; kontrol penting belum ada | Ada batas ukuran payload, cookie/session dan beberapa security header. Guard mutasi staf memakai custom header, Origin dan Fetch Metadata; handshake realtime memeriksa origin sebelum sesi. Pemeriksaan terisolasi 13 skenario berhasil pada 12 Oktober 2026. Throttle login PostgreSQL (source, source–username, account global) diterapkan dengan 11 pemeriksaan integrasi sintetis berhasil. Intake create request budget PostgreSQL kini tersedia, dengan 11 pemeriksaan HTTP/DB sintetis. MFA/IdP, ingress proxy tepercaya dan assessment abuse menyeluruh masih terbuka. |
-| Reliability dan observability | Startup/readiness dasar historis berhasil; schema terbaru v7 siap; monitoring scoped tersedia; reliability operasional belum lengkap | Health/readiness HTTP historis pada schema v4, dan db:status v7 pada 12 Oktober 2026, berhasil. App/pool recreation terverifikasi sintetis. Cap 8 kegagalan dan dead-letter/retry operator realtime kini tersedia dengan 10 pemeriksaan integrasi berhasil. Agregat antrean/outbox dan indikator staging kini tersedia melalui monitoring, diperiksa dalam 12 kelompok HTTP/DB sintetis. DB capacity metrics, alert routing, encrypted backup, restore drill dan deploy/rollback masih terbuka. |
+| Reliability dan observability | Readiness, monitoring scoped, backup terenkripsi lokal, dan restore drill terisolasi tersedia; reliability operasional belum lengkap | 23 kelompok workflow HTTP/DB, 20 kelompok realtime, 10 kelompok outbox review, 11 intake throttle, 12 monitoring, dan backup/restore terenkripsi sintetis berhasil pada pemeriksaan masing-masing. Runbook menjelaskan backup GPG AES-256 lokal dan restore target terpisah. DB capacity metrics, alert routing, offsite/retention/key lifecycle/WAL-PITR, load/failure targets, deploy/rollback serta RPO/RTO masih terbuka. |
 | Pilot/operasi publik | Belum siap dan belum disetujui | Belum ada pemilik layanan, wilayah, responder/kanal, fallback, policy data, roster/SOP nyata, dukungan on-call, target SLO/RPO/RTO, hosting, security/privacy sign-off atau penerimaan lapangan. |
 
 ## Bukti baseline yang perlu dibedakan
@@ -36,7 +36,7 @@ Dokumen implementation plan historis memuat snapshot prototipe awal: penyimpanan
 3. **Bangun dispatch adapter framework lokal.** Tambahkan durable intent/attempt/ack, local mock tanpa network egress, idempotency, timeout-unknown, bounded retry, manual review/dead-letter dan UI operasional. Tetap beri label simulasi.
 4. **Bangun privacy lifecycle untuk data sintetis.** Sediakan policy versioning, request workflow, export control, dry-run purge/anonymize dan audit. Jangan menjalankan purge pada data nyata sampai policy serta legal hold disetujui.
 5. **Tambahkan security/abuse controls.** Rate limit yang tidak menghukum jaringan bersama secara berlebihan, CSRF, header, persistent login throttle, redacted logs, role/scope review dan threat-model exercise.
-6. **Tambahkan reliability staging.** Queue/outbox/database metrics, readiness dependency/migration, alert sink lokal, backup/restore drill di database terpisah, runbook serta startup/shutdown/rollback yang dapat diulang.
+6. **Lengkapi reliability staging.** Queue/outbox/database metrics, readiness dependency/migration, alert sink lokal, backup offsite/retention/key lifecycle, WAL/PITR, failure/load checks, runbook serta startup/shutdown/rollback yang dapat diulang. Backup/restore drill lokal terenkripsi sudah memiliki implementasi dan bukti integrasi sintetis.
 7. **Lakukan acceptance rehearsal.** Warga → dispatcher → mock handoff, duplicate/retry, timeout ambigu, role/region, outage/restart, withdrawal, privacy workflow, reduced-motion/accessibility, mobile dan tile failure.
 8. **Perbarui bukti.** Sinkronkan roadmap dan PRD dengan hasil aktual. Jangan menandai feature complete dari build/typecheck saja.
 
@@ -58,6 +58,7 @@ Tidak ada konektor dispatch eksternal, notifikasi berbayar, hosting berbayar, at
 - [Roadmap SIGAP operasional](./roadmap-sigap-operasional.md)
 - [Desain workflow operasional penuh](../superpowers/specs/2026-10-03-sigap-full-operational-design.md)
 - [Panduan run staging](../../frontend/docs/fathul/run-demo.md)
+- [Runbook backup dan pemulihan staging](../../frontend/docs/fathul/database-backup.md)
 
 ## Verifikasi tambahan 12 Oktober 2026
 
@@ -82,3 +83,7 @@ Tidak ada konektor dispatch eksternal, notifikasi berbayar, hosting berbayar, at
 ## Monitoring scoped — 12 Oktober 2026
 
 [Monitoring](./monitoring.md) menambahkan API ringkasan scope wilayah dan halaman `/dashboard/monitoring`. Queue age/ownership/status, pending/due/dead-letter dan server publish acceptance dihitung dari satu statement snapshot. Storage auth outage kini menghasilkan 503, bukan sesi invalid. Dua belas kelompok pemeriksaan API/DB sintetis dan regresi berhasil; browser, background alert sink, on-call routing dan capacity/load tetap belum diverifikasi.
+
+## Backup/restore sintetis — 12 Oktober 2026
+
+`frontend/scripts/database-backup.mts` menyediakan `npm run db:backup -- backup|verify|restore`. Operasi dibatasi ke container PostgreSQL SIGAP lokal dengan bind loopback dan volume yang dikenali, database staging sintetis, file di luar repo dan passphrase kuat. `npm run test:database-backup` lulus: fixture laporan dibuat lewat HTTP pada database sementara, dump dienkripsi GPG AES-256, hasil dipulihkan ke database lain, isi dan checksum migrasi cocok, overwrite/path repository/arsip rusak ditolak, lalu fixture dibersihkan. Bukti ini hanya local staging; tidak ada backup dari database staging aktif dalam tes ini. Belum ada offsite, rotasi/pemulihan key, retensi, scheduled job, WAL/PITR, alert kegagalan, recovery lintas host atau target RPO/RTO. Runbook: [database-backup.md](../../frontend/docs/fathul/database-backup.md).
