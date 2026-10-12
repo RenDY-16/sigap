@@ -8,7 +8,7 @@ interface Props { principal: StaffIdentity; onSessionEnded(): void; logout(): Pr
 const roleDescriptions: Record<StaffRole, string> = {
   dispatcher: 'Baca dan kerjakan laporan dalam wilayah.',
   supervisor: 'Baca, workflow dan pengelolaan eskalasi dalam wilayah.',
-  operator_admin: 'Kelola akun; baca laporan dan audit dalam wilayah.',
+  operator_admin: 'Kelola akun, tangani laporan dan eskalasi, serta baca audit dalam wilayah.',
   auditor: 'Baca laporan dan audit dalam wilayah; tanpa perubahan workflow.',
 };
 

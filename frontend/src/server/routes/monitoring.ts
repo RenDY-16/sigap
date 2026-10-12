@@ -22,12 +22,12 @@ export function createMonitoringRouter(pool: Pool) {
       // One statement snapshot. All aggregates join the same authorized regions;
       // no report payload, IDs, precise location or credential data are selected.
       const result = await client.query<{
-        sampled_at: Date; active: string; unowned: string; overdue: string; oldest_active: number | null;
+        sampled_at: Date; active_count: string; unowned: string; overdue: string; oldest_active: number | null;
         by_status: OperationalSnapshot['incidents']['byStatus']; pending: string; due: string;
         dead_letter: string; delayed_due: string; oldest_due_delay: number | null;
         recent_published: string; total_failures: string;
       }>(`WITH scoped AS (SELECT id,status,owner_staff_id,created_at FROM incidents WHERE region_id=ANY($1::text[])),
-        queue AS (SELECT count(*)::text AS active,
+        queue AS (SELECT count(*)::text AS active_count,
           count(*) FILTER(WHERE owner_staff_id IS NULL)::text AS unowned,
           count(*) FILTER(WHERE created_at <= statement_timestamp()-$2*interval '1 second')::text AS overdue,
           max(GREATEST(0,EXTRACT(EPOCH FROM(statement_timestamp()-created_at))))::double precision AS oldest_active
@@ -55,7 +55,7 @@ export function createMonitoringRouter(pool: Pool) {
       const snapshot: OperationalSnapshot = {
         sampledAt: row.sampled_at.toISOString(), regionIds: principal.regionIds,
         thresholds: { queueAgeSeconds: QUEUE_AGE_SECONDS, realtimeDueDelaySeconds: DUE_DELAY_SECONDS, stagingOnly: true },
-        incidents: { active: row.active, unowned: row.unowned, overdue: row.overdue, oldestActiveSeconds: row.oldest_active,
+        incidents: { active: row.active_count, unowned: row.unowned, overdue: row.overdue, oldestActiveSeconds: row.oldest_active,
           byStatus: Object.fromEntries(INCIDENT_STATUSES.map(status => [status, row.by_status?.[status] ?? '0'])) as OperationalSnapshot['incidents']['byStatus'] },
         realtime: { pending: row.pending, due: row.due, deadLetter: row.dead_letter, delayedDue: row.delayed_due,
           oldestDueDelaySeconds: row.oldest_due_delay, publishedLast15Minutes: row.recent_published, totalFailures: row.total_failures }, signals,

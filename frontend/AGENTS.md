@@ -48,3 +48,8 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 ## XAMPP portability
 
 - Rendy wants minimal manual environment setup when moving laptops. Use npm run xampp / npm run xampp:lan with automatic private config, random session secret, fresh MariaDB schema and interactive first admin. Preserve existing .env unless explicitly reconfiguring. Never claim XAMPP runtime verified until MariaDB actually runs. PostgreSQL remains supported.
+
+## Admin handling (2026-10-13)
+
+- Rendy requests functional admin handling. operator_admin can work incidents and manage escalations within assigned regions, alongside staff/config/audit administration. Auditor remains read only; ownership, valid transitions, reason requirements, session validation and region boundaries remain enforced.
+- Queue items explicitly open detail and scroll to the detail section. Choosing an item must not reload the entire queue or clear the selection on a failed detail fetch. Keep retry/error feedback visible and explain required reasons next to disabled actions.

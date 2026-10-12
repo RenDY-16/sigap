@@ -104,7 +104,7 @@ try {
   await pool.query('UPDATE incidents SET owner_staff_id=$2 WHERE id=$1',[incident,operatorId]);
   const endpoint=`/api/staff/incidents/${incident}/dispatch`, key=randomBytes(24).toString('hex');
   assert.equal((await call('/api/staff/dispatch')).status,401);
-  assert.equal((await call(endpoint,'POST',{scenario:'accepted'},root,key)).status,403);
+  assert.equal((await call(endpoint,'POST',{scenario:'accepted'},root,key)).status,409);
   assert.equal((await call(endpoint,'POST',{scenario:'accepted'},peer,key)).status,409);
   assert.equal((await call(endpoint,'POST',{scenario:'invalid'},operator,key)).status,400);
   const responses=await Promise.all([call(endpoint,'POST',{scenario:'accepted'},operator,key),call(endpoint,'POST',{scenario:'accepted'},operator,key)]);

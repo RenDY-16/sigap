@@ -20,7 +20,7 @@ export interface StaffAccess { principal: StaffPrincipal; sessionId: string }
 const permissions: Record<string, readonly StaffCapability[]> = {
   dispatcher: ['read_incidents', 'work_incidents'],
   supervisor: ['read_incidents', 'work_incidents', 'manage_escalations'],
-  operator_admin: ['read_incidents', 'manage_staff', 'read_audit'],
+  operator_admin: ['read_incidents', 'work_incidents', 'manage_escalations', 'manage_staff', 'read_audit'],
   auditor: ['read_incidents', 'read_audit'],
 };
 export function hasStaffCapability(principal: Pick<StaffPrincipal, 'role'>, capability: StaffCapability): boolean {

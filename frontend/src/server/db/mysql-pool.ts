@@ -5,7 +5,7 @@ import type { Pool as PgPool } from 'pg';
 import { compileMysqlQuery } from './mysql-sql.js';
 
 const jsonColumns = new Set(['session_data','details','payload','field_answers','service_hours','required_fields','requiredFields','steps','by_status','coverageRegionIds','categoryIds']);
-const booleanColumns = new Set(['active','enabled','synthetic','simulated','external_dispatch_enabled']);
+const booleanColumns = new Set(['active','enabled','synthetic','simulated','external_dispatch_enabled','older']);
 function normalizeRow(row: RowDataPacket): Record<string, unknown> {
  const result: Record<string, unknown> = {};
  for(const [key,value] of Object.entries(row)) {

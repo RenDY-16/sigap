@@ -144,3 +144,13 @@ Setup memeriksa Node.js/npm dan versi server MariaDB, lalu membedakan kegagalan 
 Setup ini menargetkan MariaDB `10.4+` melalui XAMPP. **Oracle MySQL 8 tidak didukung saat ini.** Data PostgreSQL lama tidak dikonversi otomatis. Perintah `db:up`, `db:down`, dan `db:backup` adalah helper PostgreSQL, bukan helper XAMPP.
 
 Panduan teknis XAMPP: [`docs/fathul/xampp.md`](docs/fathul/xampp.md). Panduan PostgreSQL: [`docs/fathul/run-demo.md`](docs/fathul/run-demo.md). PRD, desain, dan catatan teknis lainnya: [`docs/fathul/`](docs/fathul/).
+
+## Menangani laporan sebagai admin
+
+1. Masuk ke `/dashboard/login` dengan akun administrator yang dibuat saat setup.
+2. Klik **Detail** pada baris laporan. Halaman bergulir ke bagian detail; jika gagal, pesan dan tombol muat ulang tetap tersedia.
+3. Klik **Klaim laporan** sebelum mengubah status. Jika laporan sudah dimiliki petugas lain, admin dapat mengambil alih dengan alasan wajib.
+4. Pilih SOP yang tersedia dan isi alasan tindakan untuk triase, penetapan unit, serta penyelesaian. Tombol yang memerlukan alasan aktif setelah field tersebut terisi.
+5. Jalankan langkah status sesuai urutan. Penetapan unit menggunakan tombol khusus dan tetap bersifat internal; layanan darurat resmi belum terhubung.
+
+Admin memiliki akses penanganan/eskalasi dalam wilayahnya, konfigurasi operasional, pengelolaan staf, audit, realtime dan monitoring. Auditor tetap membaca saja. Status akhir, validasi sesi, wilayah dan kepemilikan tetap diperiksa server.

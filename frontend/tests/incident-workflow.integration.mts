@@ -2,13 +2,15 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { randomBytes } from 'node:crypto';
 import pg from 'pg';
+import { createDatabasePool } from '../src/server/db/pool.ts';
 import { createApplication } from '../src/server/app.ts';
 import { runMigrations } from '../src/server/db/migrate.ts';
 import { bootstrapFirstAdmin } from '../src/server/identity/staff-repository.ts';
 
 // Synthetic fixtures only. The staging database is never modified by this script.
 const url=new URL(process.env.SIGAP_VERIFY_DATABASE_URL??'postgresql://sigap_dev:sigap_local_synthetic_only@127.0.0.1:54329/sigap_staging');
-const admin=new pg.Pool({connectionString:url.toString()});
+const mysqlMode=['mysql:','mariadb:'].includes(url.protocol);
+const admin=createDatabasePool({databaseUrl:url.toString(),databasePoolMax:12});
 const name=`sigap_workflow_${Date.now()}_${randomBytes(4).toString('hex')}`;
 let created=false;let pool:pg.Pool|undefined;let server:ReturnType<typeof createServer>|undefined;let base='';
 const password=randomBytes(24).toString('hex');const secret=randomBytes(32).toString('hex');
@@ -28,7 +30,7 @@ function privateProjectionAbsent(value:unknown){
 }
 const input={category:'security',categoryId:'security',configVersion:1,description:'Synthetic integration incident only',locationMode:'simulation',initialLocation:{lat:0.1,lng:0.2},fieldAnswers:{}};
 try{
- await admin.query(`CREATE DATABASE "${name}"`);created=true;url.pathname='/'+name;pool=new pg.Pool({connectionString:url.toString(),max:12});await runMigrations(pool);await bootstrapFirstAdmin(pool,'workflow_admin','Synthetic admin',password);await start();
+ await admin.query(mysqlMode ? `CREATE DATABASE ${name}` : `CREATE DATABASE "${name}"`);created=true;url.pathname='/'+name;pool=createDatabasePool({databaseUrl:url.toString(),databasePoolMax:12});await runMigrations(pool);await bootstrapFirstAdmin(pool,'workflow_admin','Synthetic admin',password);await start();
  const root=await login('workflow_admin');
  const accounts:Record<string,{cookie:string;id:string}>={};
  for(const [username,role]of [['dispatch_one','dispatcher'],['dispatch_two','dispatcher'],['workflow_supervisor','supervisor'],['workflow_auditor','auditor'],['foreign_dispatch','dispatcher']]){
@@ -41,11 +43,11 @@ try{
  checks.push('admin provisions individual accounts; login cookies usable');
  await expect('/api/staff/incidents',401);const publicConfig=await expect('/api/operations/public-config',200);assert(!('responders'in publicConfig.data));assert(!('sops'in publicConfig.data));checks.push('anonymous staff API denied; public config excludes SOP/roster');
  const token=randomBytes(32).toString('hex');const key=randomBytes(32).toString('hex');const made=await expect('/api/citizen/incidents',201,'POST',input,undefined,token,key);const id=made.data.id;privateProjectionAbsent(made.data);
- const retries=await Promise.all(Array.from({length:6},()=>call('/api/citizen/incidents','POST',input,undefined,token,key)));assert(retries.every(r=>r.status===201&&r.data.id===id));const count=await pool.query('SELECT count(*)::integer AS n FROM incidents');assert.equal(count.rows[0].n,1);checks.push('concurrent idempotent create returns one durable incident');
+ const retries=await Promise.all(Array.from({length:6},()=>call('/api/citizen/incidents','POST',input,undefined,token,key)));assert(retries.every(r=>r.status===201&&r.data.id===id));const count=await pool.query('SELECT count(*)::integer AS n FROM incidents');assert.equal(Number(count.rows[0].n),1);checks.push('concurrent idempotent create returns one durable incident');
  await expect('/api/citizen/incidents',409,'POST',{...input,description:'Different synthetic payload'},undefined,token,key);await expect('/api/citizen/incidents',409,'POST',input,undefined,randomBytes(32).toString('hex'),key);await expect('/api/citizen/incidents',404,'GET',undefined,undefined,randomBytes(32).toString('hex'));checks.push('changed payload/credential retry rejected; unknown token cannot read');
  const path=`/api/staff/incidents/${id}`;const op1=accounts.dispatch_one;const op2=accounts.dispatch_two;const auditor=accounts.workflow_auditor;const supervisor=accounts.workflow_supervisor;
  const owned={expectedStatus:'received',expectedOwnerId:null,reason:'Synthetic claim'};
- await expect(path+'/claim',403,'POST',owned,root.cookie);await expect(path+'/claim',403,'POST',owned,auditor.cookie);await expect('/api/staff/accounts',403,'GET',undefined,op1.cookie);await expect(path,200,'GET',undefined,auditor.cookie);checks.push('admin/auditor cannot work incidents; dispatcher cannot administer accounts');
+ await expect(path+'/claim',200,'POST',owned,root.cookie);await expect(path+'/release',200,'POST',{expectedStatus:'received',expectedOwnerId:root.id,reason:'Synthetic admin release'},root.cookie);await expect('/api/staff/operations/work-config?incidentId='+id,200,'GET',undefined,root.cookie);await expect(path+'/claim',403,'POST',owned,auditor.cookie);await expect('/api/staff/accounts',403,'GET',undefined,op1.cookie);await expect(path,200,'GET',undefined,auditor.cookie);checks.push('admin can claim/release; auditor cannot work; dispatcher cannot administer accounts');
  const foreign=accounts.foreign_dispatch;const empty=await expect('/api/staff/incidents',200,'GET',undefined,foreign.cookie);assert.equal(empty.data.items.length,0);await expect(path,404,'GET',undefined,foreign.cookie);checks.push('foreign-region session cannot list/read local incidents');
  const race=await Promise.all([call(path+'/claim','POST',owned,op1.cookie),call(path+'/claim','POST',owned,op2.cookie)]);assert.deepEqual(race.map(r=>r.status).sort(),[200,409]);let detail=race.find(r=>r.status===200)!.data;let worker=detail.ownerStaffId===op1.id?op1:op2;const loser=worker.id===op1.id?op2:op1;checks.push('competing claims yield one owner and one conflict');
  const action=(expectedStatus=detail.status)=>({expectedStatus,sopId:'security-staging',sopVersion:1,reason:'Synthetic internal reason'});
@@ -91,7 +93,18 @@ try{
  const received=(await expect('/api/staff/incidents?statuses=received&owner=me',200,'GET',undefined,op1.cookie)).data;assert.equal(received.items.length,1);assert.equal(received.items[0].id,third.id);checks.push('cursor pagination has no repeats; status and owner filters agree');
  await expect('/api/staff/incidents?limit=0',400,'GET',undefined,root.cookie);await expect('/api/staff/incidents?minAgeMinutes=10&maxAgeMinutes=1',400,'GET',undefined,root.cookie);checks.push('invalid pagination and age filters rejected');
  await expect(`/api/staff/accounts/${root.id}/active`,409,'PATCH',{active:false},root.cookie);checks.push('last active operator admin cannot be disabled');
- await stop();await pool.end();pool=new pg.Pool({connectionString:url.toString(),max:12});await start();assert.equal((await expect('/api/citizen/incidents',200,'GET',undefined,undefined,token)).data.status,'resolved');await expect(path,200,'GET',undefined,worker.cookie);checks.push('app and pool recreation preserve report, workflow and staff session');
+ await stop();await pool.end();pool=createDatabasePool({databaseUrl:url.toString(),databasePoolMax:12});await start();assert.equal((await expect('/api/citizen/incidents',200,'GET',undefined,undefined,token)).data.status,'resolved');await expect(path,200,'GET',undefined,worker.cookie);checks.push('app and pool recreation preserve report, workflow and staff session');
  await expect(`/api/staff/accounts/${worker.id}/active`,200,'PATCH',{active:false},root.cookie);await expect('/api/staff/incidents',401,'GET',undefined,worker.cookie);checks.push('disabling account invalidates existing HTTP session');
- console.log(JSON.stringify({status:'passed',scope:'real HTTP + PostgreSQL synthetic workflow; no browser/socket delivery/provider verification',checks},null,2));
-}finally{await stop();if(pool)await pool.end();if(created){await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',[name]);await admin.query(`DROP DATABASE "${name}"`);}await admin.end();}
+ const adminToken=randomBytes(32).toString('hex');
+ const adminReport=(await expect('/api/citizen/incidents',201,'POST',{...additional,configVersion:3},undefined,adminToken,randomBytes(32).toString('hex'))).data;
+ const adminPath=`/api/staff/incidents/${adminReport.id}`;
+ await expect(adminPath+'/claim',200,'POST',{expectedStatus:'received',expectedOwnerId:null,reason:'Synthetic dispatcher claim'},op1.cookie);
+ let adminDetail=(await expect(adminPath+'/takeover',200,'POST',{expectedStatus:'received',expectedOwnerId:op1.id,reason:'Synthetic admin takeover'},root.cookie)).data;
+ const adminAction=()=>({expectedStatus:adminDetail.status,sopId:'security-staging',sopVersion:1,reason:'Synthetic admin workflow'});
+ for(const status of ['acknowledged','triaged'])adminDetail=(await expect(adminPath+'/status',200,'PATCH',{...adminAction(),status},root.cookie)).data;
+ adminDetail=(await expect(adminPath+'/assignment',200,'PATCH',{...adminAction(),unitId:'unit-01'},root.cookie)).data;
+ for(const status of ['in_progress','resolved'])adminDetail=(await expect(adminPath+'/status',200,'PATCH',{...adminAction(),status},root.cookie)).data;
+ assert.equal((await expect('/api/citizen/incidents',200,'GET',undefined,undefined,adminToken)).data.status,'resolved');
+ checks.push('admin takeover, SOP, assignment and full resolution visible to citizen');
+ console.log(JSON.stringify({status:'passed',scope:`real HTTP + ${mysqlMode?'MariaDB':'PostgreSQL'} synthetic workflow; no browser/socket delivery/provider verification`,checks},null,2));
+}finally{await stop();if(pool)await pool.end();if(created){if(!mysqlMode)await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',[name]);await admin.query(mysqlMode ? `DROP DATABASE ${name}` : `DROP DATABASE "${name}"`);}await admin.end();}
