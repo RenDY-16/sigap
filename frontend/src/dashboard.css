@@ -285,3 +285,9 @@
 .dashboard-page .outbox-intro { padding: 24px 0; }
 .dashboard-page .outbox-intro h1 { font-size: clamp(30px,3vw,42px); line-height: 1.12; letter-spacing: -.05em; }
 @media(max-width:600px) { .dashboard-landing-style .dashboard-hero { grid-template-columns: minmax(0,1fr) 78px; }.dashboard-landing-style .dashboard-hero-art { min-height: 0; }.dashboard-landing-style .dashboard-hero-art img { height: 78px; } }
+
+/* Keep the service note readable without absolute icon overlap. */
+.dashboard-landing-style .metric-card-note { display: grid; grid-template-columns: 32px minmax(0, 1fr); column-gap: 12px; align-content: center; align-items: start; }
+.dashboard-landing-style .metric-card-note .metric-note-mark { position: static; transform: none; grid-column: 1; grid-row: 1 / 3; width: 32px; height: 32px; margin: 0; }
+.dashboard-landing-style .metric-card-note > span, .dashboard-landing-style .metric-card-note > small { grid-column: 2; min-width: 0; overflow-wrap: anywhere; }
+.dashboard-landing-style .metric-card-note > small { margin-top: 6px; line-height: 1.6; }
