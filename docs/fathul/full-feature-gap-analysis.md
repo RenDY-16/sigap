@@ -1,6 +1,6 @@
 # Analisis Gap Menuju SIGAP Operasional
 
-**Tanggal pembaruan:** 3 Oktober 2026  
+**Tanggal pembaruan:** 12 Oktober 2026  
 **Status:** audit source dan bukti yang tersedia; bukan bukti runtime atau persetujuan pilot  
 **Arah produk:** dispatcher manusia menangani laporan; adapter resmi menyusul setelah kontrak kanal disetujui.
 
@@ -8,7 +8,7 @@
 
 Source fase 1–3 telah terintegrasi di workspace utama. Source mencakup penyimpanan PostgreSQL untuk insiden/audit/session, identitas staf individual, role dan scope wilayah sementara, konfigurasi operasi berversi, intake warga dinamis, workflow antrean, withdrawal, serta event outbox untuk realtime. TypeScript check dan production build sebelumnya lulus.
 
-Database staging sintetis lokal kini menjalankan migration 0001–0004; `db:status` melaporkan schema version 4 dan tidak ada migration pending. Server lokal merespons `GET /`, `/api/healthz`, dan `/api/readyz` dengan HTTP 200. Ini membuktikan startup dasar dan koneksi database/readiness saja. Workflow transaksi, authentication/role isolation, Socket.IO delivery, UI/browser, restart/restore, dan walkthrough warga–dispatcher belum diverifikasi. Fase dispatch adapter, privacy lifecycle, anti-abuse/security hardening, observability, backup/restore, dan deployment staging masih terbuka. Belum ada bukti organisasi/operator, instansi responder, kanal/acknowledgment contract, atau sign-off pilot.
+Database staging sintetis lokal kini menjalankan migration 0001–0005; `db:status` melaporkan schema version 5 dan tidak ada migration pending. Server lokal merespons `GET /`, `/api/healthz`, dan `/api/readyz` dengan HTTP 200. Ini membuktikan startup dasar dan koneksi database/readiness saja. Workflow transaksi, authentication/role isolation, Socket.IO delivery, UI/browser, restart/restore, dan walkthrough warga–dispatcher belum diverifikasi. Fase dispatch adapter, privacy lifecycle, anti-abuse/security hardening, observability, backup/restore, dan deployment staging masih terbuka. Belum ada bukti organisasi/operator, instansi responder, kanal/acknowledgment contract, atau sign-off pilot.
 
 ## Requirement matrix
 
@@ -21,7 +21,7 @@ Database staging sintetis lokal kini menjalankan migration 0001–0004; `db:stat
 | Outbox realtime | Source tersedia; delivery runtime belum diverifikasi | Publisher mengirim event UI. Ini bukan dispatch ke responder dan bukan bukti browser menerima atau petugas membaca event. |
 | Dispatch intent, provider adapter, acknowledgment dan dead-letter | Belum tersedia di source | Belum ada durable dispatch queue/provider contract. Outbox realtime yang ada tidak memenuhi requirement dispatch. Desain usulan ada di [spesifikasi workflow operasional](../superpowers/specs/2026-10-03-sigap-full-operational-design.md), masih menunggu persetujuan dokumen. |
 | Privacy request, retensi, ekspor, penghapusan/anonimisasi | Belum tersedia | Kebijakan dan workflow lifecycle belum ada. Durasi retensi/legal hold tidak boleh diasumsikan sebelum pemilik layanan memutuskan. |
-| Anti-abuse/security hardening | Sebagian fondasi tersedia; kontrol penting belum ada | Ada batas ukuran payload, cookie/session dan beberapa security header. Guard mutasi staf memakai custom header, Origin dan Fetch Metadata; handshake realtime memeriksa origin sebelum sesi. Pemeriksaan terisolasi 13 skenario berhasil pada 12 Oktober 2026. Rate limiting, throttling login persisten, MFA/IdP dan assessment abuse menyeluruh masih terbuka. |
+| Anti-abuse/security hardening | Sebagian fondasi tersedia; kontrol penting belum ada | Ada batas ukuran payload, cookie/session dan beberapa security header. Guard mutasi staf memakai custom header, Origin dan Fetch Metadata; handshake realtime memeriksa origin sebelum sesi. Pemeriksaan terisolasi 13 skenario berhasil pada 12 Oktober 2026. Throttle login PostgreSQL (source, source–username, account global) diterapkan dengan 11 pemeriksaan integrasi sintetis berhasil. Intake rate limiting, MFA/IdP, konfigurasi proxy dan assessment abuse menyeluruh masih terbuka. |
 | Reliability dan observability | Startup/readiness lokal dasar berhasil; operational reliability belum tersedia/belum diverifikasi | `/api/healthz` dan `/api/readyz` menghasilkan 200 dengan database schema v4. Metrics, alert routing, retry cap/dead-letter, encrypted backup, restore drill dan deploy/rollback staging belum tersedia atau belum dibuktikan. |
 | Pilot/operasi publik | Belum siap dan belum disetujui | Belum ada pemilik layanan, wilayah, responder/kanal, fallback, policy data, roster/SOP nyata, dukungan on-call, target SLO/RPO/RTO, hosting, security/privacy sign-off atau penerimaan lapangan. |
 
@@ -58,3 +58,7 @@ Tidak ada konektor dispatch eksternal, notifikasi berbayar, hosting berbayar, at
 - [Roadmap SIGAP operasional](./roadmap-sigap-operasional.md)
 - [Desain workflow operasional penuh](../superpowers/specs/2026-10-03-sigap-full-operational-design.md)
 - [Panduan run staging](../../frontend/docs/fathul/run-demo.md)
+
+## Verifikasi tambahan 12 Oktober 2026
+
+[Throttle login](./login-throttle.md) diverifikasi pada database sintetis terpisah: concurrency, instance recreation, expiry, source/account limits, valid session dan fail-closed. Ini memperkuat bukti sebagian fase 2/5; bukan verifikasi semua workflow maupun kesiapan produksi.

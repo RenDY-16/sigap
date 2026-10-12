@@ -203,3 +203,9 @@ Referensi: [mkcert README](https://github.com/FiloSottile/mkcert), [MDN Secure C
 Frontend menambahkan header `X-SIGAP-Request: staff` otomatis pada POST/PUT/PATCH/DELETE API staf, termasuk login dan logout. Client nonbrowser yang memanggil API staf harus menambahkan header itu sendiri; header bukan password dan tidak menggantikan sesi, role, atau scope. Origin yang disertakan harus sama persis dengan skema dan Host koneksi. GET/HEAD/OPTIONS tidak membutuhkan header, tetapi akses staf tetap diperiksa oleh route/session.
 
 Permintaan browser dari origin lain dan same-site sibling ditolak; tidak ada izin CORS. Pemeriksaan origin berlaku juga pada realtime. Deployment saat ini mengasumsikan aplikasi dan API pada origin yang sama dengan TLS langsung pada server, atau proxy development Vite yang mempertahankan Host dan menggunakan protokol yang sama. TLS termination/rewrite host di reverse proxy belum didukung oleh konfigurasi origin ini; jangan mengaktifkan trust proxy global atau melonggarkan guard untuk mengatasinya tanpa desain dan verifikasi deployment.
+
+## Pembatasan login dan verifikasi sintetis
+
+Schema lokal terbaru v5 menambahkan throttle login PostgreSQL. Terlalu banyak percobaan menghasilkan 429 dan Retry-After; login berhasil juga dihitung, dan window tidak diperpanjang oleh request terblokir. Restart app dengan SESSION_SECRET yang sama mempertahankan counter. IP proxy tidak dipercaya sebagai IP asli pengguna; deployment proxy memerlukan konfigurasi lebih lanjut.
+
+`npm run test:login-throttle` membuat database sintetis unik pada server PostgreSQL lokal dan menghapus database tersebut setelah selesai. Tidak memakai akun atau data staging. Detail dan batas bukti ada pada docs/fathul/login-throttle.md di root proyek.

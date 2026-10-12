@@ -51,6 +51,7 @@ export type DemoServiceErrorCode =
   | "unauthorized"
   | "not_found"
   | "conflict"
+  | "rate_limited"
   | "network"
   | "storage";
 
@@ -83,6 +84,7 @@ function errorCodeForStatus(status: number): DemoServiceErrorCode {
   if (status === 401 || status === 403) return "unauthorized";
   if (status === 404) return "not_found";
   if (status === 409) return "conflict";
+  if (status === 429) return "rate_limited";
   return "network";
 }
 

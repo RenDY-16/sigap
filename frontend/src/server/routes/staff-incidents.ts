@@ -6,6 +6,7 @@ import type { ServerConfig } from "../config.js";
 import type { Pool } from "pg";
 import { authenticateStaff } from "../identity/staff-repository.js";
 import { ApiError } from "../errors.js";
+import { createLoginThrottle } from "../security/login-throttle.js";
 import type { IncidentServices } from "../services/incident-service.js";
 import type { IncidentListFilter, OperationalIncidentStatus } from "../db/contracts.js";
 import { isIncidentStatus, validateWorkflowAction, validateOwnershipAction } from "../services/incident-service.js";
@@ -95,6 +96,7 @@ export function createStaffIncidentsRouter(
 ): StaffRoutes {
   const router = Router();
   const sessions = createStaffSession(config, pool);
+  const reserveLoginAttempt = createLoginThrottle(pool, config.sessionSecret);
 
   const admin = createStaffAdminRepository(pool);
   const access = (request: Parameters<RequestHandler>[0]): StaffAccess => ({ principal: request.staffPrincipal!, sessionId: request.sessionID });
@@ -121,6 +123,11 @@ export function createStaffIncidentsRouter(
     const { username, password } = request.body;
     if (typeof username !== "string" || username.length > 128 || typeof password !== "string" || Buffer.byteLength(password, "utf8") > 1024) {
       throw new ApiError(400, "invalid_credentials", "Username and password are required.");
+    }
+    const reservation = await reserveLoginAttempt(request.socket.remoteAddress ?? "unknown", username);
+    if (!reservation.allowed) {
+      response.setHeader("Retry-After", String(reservation.retryAfter));
+      throw new ApiError(429, "login_throttled", `Terlalu banyak percobaan login. Coba lagi dalam ${reservation.retryAfter} detik.`);
     }
     const principal = await authenticateStaff(pool, username, password);
     if (!principal || !principal.regionIds.length) {
