@@ -79,6 +79,7 @@ import {
 import type { RequiredIncidentField } from "./shared/operations";
 import { connectCitizenSocket, connectStaffSocket, hasSeenOutboxEvent, type RealtimeEvent } from "./realtime/socketClient";
 import { StaffAuditPage } from "./components/StaffAuditPage";
+import { StaffMonitoringPage } from "./components/StaffMonitoringPage";
 import { StaffOutboxPage } from "./components/StaffOutboxPage";
 import { StaffAccountsPage } from "./components/StaffAccountsPage";
 import { MapView } from "./components/MapView";
@@ -1185,7 +1186,7 @@ function DashboardPage() {
   async function handleLogout(){try{await logout();navigate('/dashboard/login',{replace:true});}catch(cause){setActionError(cause instanceof Error?cause.message:'Logout belum dapat diselesaikan.');}}
 
   return <main className="dashboard-page dashboard-landing-style">
-    <header className="dashboard-header"><Brand/><div className="dashboard-head-center"><span className="live-dot"/> DASHBOARD <span className="demo-chip">STAGING</span></div><div className="dashboard-head-actions"><span className="staff-identity">{principal?.displayName} · {principal?.role}</span>{principal?.role==='operator_admin'&&<><Link className="dashboard-home-link" to="/dashboard/operations">Operasional</Link><Link className="dashboard-home-link" to="/dashboard/accounts">Akses staff</Link></>}{(principal?.role==='auditor'||principal?.role==='operator_admin')&&<><Link className="dashboard-home-link" to="/dashboard/audit">Audit</Link><Link className="dashboard-home-link" to="/dashboard/realtime">Realtime</Link></>}<Link to="/" className="dashboard-home-link">Halaman warga</Link><button className="icon-button" onClick={()=>{void handleLogout();}} aria-label="Keluar"> <SignOut size={19}/></button></div></header>
+    <header className="dashboard-header"><Brand/><div className="dashboard-head-center"><span className="live-dot"/> DASHBOARD <span className="demo-chip">STAGING</span></div><div className="dashboard-head-actions"><span className="staff-identity">{principal?.displayName} · {principal?.role}</span>{principal?.role==='operator_admin'&&<><Link className="dashboard-home-link" to="/dashboard/operations">Operasional</Link><Link className="dashboard-home-link" to="/dashboard/accounts">Akses staff</Link></>}{(principal?.role==='auditor'||principal?.role==='operator_admin')&&<><Link className="dashboard-home-link" to="/dashboard/audit">Audit</Link><Link className="dashboard-home-link" to="/dashboard/realtime">Realtime</Link></>}<Link className="dashboard-home-link" to="/dashboard/monitoring">Monitoring</Link><Link to="/" className="dashboard-home-link">Halaman warga</Link><button className="icon-button" onClick={()=>{void handleLogout();}} aria-label="Keluar"> <SignOut size={19}/></button></div></header>
     <div className="dashboard-body">
       <section className="dashboard-hero" aria-labelledby="dashboard-title">
         <div className="dashboard-hero-copy"><p className="eyebrow">PUSAT LAPORAN · LOCAL-STAGING</p><h1 id="dashboard-title">Laporan masuk.<br/>Tindakan terarah.</h1><p className="dashboard-hero-description">Satu ruang untuk memantau lokasi, meninjau laporan, dan mengelola alur penanganan.</p><DemoNotice compact/></div>
@@ -1297,6 +1298,14 @@ function StaffOutboxViewPage() {
   return <StaffOutboxPage principal={principal} onSessionEnded={onSessionEnded} />;
 }
 
+function StaffMonitoringViewPage() {
+  const { principal, markStaffLoggedOut } = useDemo();
+  const navigate = useNavigate();
+  const onSessionEnded = useCallback(() => { markStaffLoggedOut(); navigate('/dashboard/login', { replace: true }); }, [markStaffLoggedOut, navigate]);
+  if (!principal) return <Navigate to="/dashboard/login" replace />;
+  return <StaffMonitoringPage principal={principal} onSessionEnded={onSessionEnded} />;
+}
+
 function StaffGuard({ children }: PropsWithChildren) {
   const { isStaff, authChecking } = useDemo();
   if (authChecking) return <main className="app-page"><AppHeader title="Dashboard petugas demo" /><div className="page-container narrow-container not-found-panel"><CircleNotch className="spin" size={30} /><h1>Memeriksa sesi petugas…</h1></div></main>;
@@ -1319,6 +1328,7 @@ export function App() {
           <Route path="/report/new" element={<ReportNewPage />} />
           <Route path="/report/:token" element={<ReportStatusPage />} />
           <Route path="/dashboard/login" element={<DashboardLoginPage />} />
+          <Route path="/dashboard/monitoring" element={<StaffGuard><StaffMonitoringViewPage /></StaffGuard>} />
           <Route path="/dashboard/realtime" element={<StaffGuard><StaffOutboxViewPage /></StaffGuard>} />
           <Route path="/dashboard/audit" element={<StaffGuard><StaffAuditViewPage /></StaffGuard>} />
           <Route path="/dashboard/accounts" element={<StaffGuard><StaffAccessManagementPage /></StaffGuard>} />

@@ -1,3 +1,4 @@
+import { ApiError } from '../errors.js';
 import { createHash } from 'node:crypto';
 import session from 'express-session';
 import type { Request, RequestHandler } from 'express';
@@ -45,7 +46,12 @@ export function createStaffSession(config:ServerConfig,pool:Pool):StaffSessionMa
    const row=result.rows[0]; if(!row?.principal_id||!Number.isInteger(row.credential_version))return null;
    return getActivePrincipal(executor,row.principal_id,row.credential_version as number);
  };
- const middleware:RequestHandler=(req,res,next)=>base(req,res,error=>{if(error){next(error);return;} void (async()=>{const sid=req.sessionID;if(sid)req.staffPrincipal=await resolvePrincipalForSession(sid)??undefined;})().then(()=>next(),()=>next());});
+ const authenticationUnavailable=()=>new ApiError(503,'staff_authentication_unavailable','Verifikasi sesi sementara tidak tersedia. Silakan coba lagi; gangguan ini belum berarti sesi Anda berakhir.');
+ const middleware:RequestHandler=(req,res,next)=>base(req,res,error=>{
+   if(error){next(authenticationUnavailable());return;}
+   void (async()=>{const sid=req.sessionID;if(sid)req.staffPrincipal=await resolvePrincipalForSession(sid)??undefined;})()
+     .then(()=>next(),()=>next(authenticationUnavailable()));
+ });
  return {middleware,
    principal:async(req,executor=pool)=>req.sessionID?resolvePrincipalForSession(req.sessionID,executor):null,
    resolvePrincipalForSession,

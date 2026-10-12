@@ -25,3 +25,7 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 
 - /dashboard/realtime keeps warm-white, black/red editorial styling aligned with the admin dashboard. Metadata-only queue cards, explicit pending/dead-letter states, pagination and required review reason; never imply a retry is confirmed delivery.
 - Auditor reads only; operator_admin schedules retries. Exact permissions and region scope remain server-enforced. Browser rendering of this new page is not yet verified.
+
+## Operational monitoring (2026-10-12)
+
+- /dashboard/monitoring follows warm editorial dashboard styling. Use precise counts, explicit snapshot timestamps and stale-data labels. Manual refresh and staging thresholds are not live on-call alerting or public SLA. Keep metrics region-scoped, exclude citizen content/location, distinguish server emit acceptance from browser/human receipt. UI browser rendering remains unverified.

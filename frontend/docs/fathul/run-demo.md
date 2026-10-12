@@ -227,3 +227,7 @@ Schema terbaru v6 menambahkan dead-letter dan lifetime failure count. Event berh
 ## Intake create protection — 12 Oktober 2026
 
 Migration 0007 menambahkan request budget persisten PostgreSQL untuk POST laporan warga: sumber koneksi 120/60 detik, token normalisasi 10/60 detik. HTTP 429 menyertakan Retry-After; storage limiter tidak tersedia menghasilkan 503. Ambang staging dan direct ingress saja; proxy dan trafik layanan nyata masih perlu assessment. Gunakan `npm run db:migrate`, `npm run db:status`, serta `npm run test:intake-throttle` untuk verifikasi sintetis. Rincian ada di `docs/fathul/intake-throttle.md` pada root workspace.
+
+## Monitoring — 12 Oktober 2026
+
+Halaman `/dashboard/monitoring` dan `GET /api/staff/monitoring` menyediakan agregat wilayah akun staf. Ambang indikator staging: umur laporan aktif 15 menit, keterlambatan event due 2 menit. Count string menjaga presisi; tidak ada payload/lokasi dalam response. Refresh manual, belum background/on-call alerts. Gunakan `npm run test:monitoring` untuk verifikasi sintetis. Rincian dan batas bukti: `docs/fathul/monitoring.md` pada root workspace.

@@ -1,4 +1,5 @@
 import { guardCitizenIntake } from "./security/intake-throttle.js";
+import { createMonitoringRouter } from "./routes/monitoring.js";
 import express, { type ErrorRequestHandler, type Express } from "express";
 import { existsSync } from "node:fs";
 import path from "node:path";
@@ -69,6 +70,7 @@ export function createApplication(config: ServerConfig, pool: Pool): Application
   app.use("/api/citizen", createCitizenIncidentsRouter(services));
   app.use("/api/operations", createPublicOperationsRouter(pool));
   app.use("/api/staff/operations", createStaffOperationsRouter(pool));
+  app.use("/api/staff/monitoring", createMonitoringRouter(pool));
   app.use("/api/staff/realtime", createStaffOutboxRouter(pool));
   app.use("/api/staff", staffRoutes.router);
 

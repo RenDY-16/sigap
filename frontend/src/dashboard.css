@@ -162,3 +162,28 @@
 .outbox-review-panel > div { display: flex; gap: 12px; flex-wrap: wrap; }
 @media (max-width: 1000px) { .outbox-event { grid-template-columns: 1fr 1.5fr; }.outbox-event > button { grid-column: 1 / -1; justify-self: start; } }
 @media (max-width: 600px) { .outbox-event { grid-template-columns: 1fr; padding: 22px; }.outbox-toolbar label { flex: 1; min-width: 0; }.outbox-toolbar > span { flex-basis: 100%; margin-left: 0; }.outbox-review-panel { padding: 22px; } }
+
+/* Scoped operational summary: stable controls and readable, responsive counts. */
+.monitoring-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin: 28px 0; }
+.monitoring-toolbar p { color: var(--muted); font-size: 12px; }
+.monitoring-signals { padding: 24px; border-block: 1px solid var(--line); margin: 22px 0; }
+.monitoring-signals > p:last-child { color: var(--muted); font-size: 13px; line-height: 1.8; }
+.monitoring-signal { display: flex; align-items: baseline; gap: 18px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.monitoring-signal strong { color: #c9232b; font-size: 30px; letter-spacing: -.045em; min-width: 50px; }
+.monitoring-signal span { font-size: 14px; }
+.monitoring-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin: 28px 0; }
+.monitoring-metrics article { padding: 24px; background: #fff; border: 1px solid var(--line); border-radius: 14px; }
+.monitoring-metrics span { font-size: 12px; color: var(--muted); }
+.monitoring-metrics strong { display: block; margin: 20px 0; font-size: clamp(28px, 3vw, 44px); line-height: 1.12; letter-spacing: -.055em; overflow-wrap: anywhere; }
+.monitoring-metrics p { font-size: 11px; line-height: 1.7; color: var(--muted); }
+.monitoring-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.monitoring-panel { padding: 28px; background: #fff; border: 1px solid var(--line); border-radius: 14px; }
+.monitoring-panel h2 { font-size: 28px; letter-spacing: -.045em; }
+.monitoring-panel dl { margin: 28px 0; }
+.monitoring-panel dl > div { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.monitoring-panel dt { font-size: 13px; color: var(--muted); }
+.monitoring-panel dd { margin: 0; font-size: 17px; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+.monitoring-panel > p:not(.eyebrow) { font-size: 12px; line-height: 1.8; color: var(--muted); }
+.monitoring-snapshot-stale .monitoring-metrics, .monitoring-snapshot-stale .monitoring-columns { opacity: .7; }
+@media(max-width: 1000px) { .monitoring-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media(max-width: 650px) { .monitoring-columns { grid-template-columns: 1fr; }.monitoring-panel { padding: 22px; }.monitoring-metrics { gap: 12px; }.monitoring-metrics article { padding: 18px; }.monitoring-signal { align-items: flex-start; } }

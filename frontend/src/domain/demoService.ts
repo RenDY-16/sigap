@@ -392,3 +392,8 @@ export async function retryOutboxEvent(id: string, reason: string): Promise<{ sc
     ...jsonRequest('POST', { reason }), credentials: 'include',
   });
 }
+
+export type { OperationalSnapshot } from '../shared/monitoring';
+export async function getOperationalSnapshot(): Promise<import('../shared/monitoring').OperationalSnapshot> {
+  return request('/api/staff/monitoring', { credentials: 'include', cache: 'no-store' });
+}
