@@ -209,3 +209,7 @@ Permintaan browser dari origin lain dan same-site sibling ditolak; tidak ada izi
 Schema lokal terbaru v5 menambahkan throttle login PostgreSQL. Terlalu banyak percobaan menghasilkan 429 dan Retry-After; login berhasil juga dihitung, dan window tidak diperpanjang oleh request terblokir. Restart app dengan SESSION_SECRET yang sama mempertahankan counter. IP proxy tidak dipercaya sebagai IP asli pengguna; deployment proxy memerlukan konfigurasi lebih lanjut.
 
 `npm run test:login-throttle` membuat database sintetis unik pada server PostgreSQL lokal dan menghapus database tersebut setelah selesai. Tidak memakai akun atau data staging. Detail dan batas bukti ada pada docs/fathul/login-throttle.md di root proyek.
+
+## Verifikasi workflow pada database terpisah
+
+`npm run test:incident-workflow` menjalankan walkthrough warga–petugas melalui HTTP dan PostgreSQL pada database sintetis sementara milik test. Cakupan mencakup create retry, role/region, claim/release/takeover, lifecycle/eskalasi, withdrawal, pagination/filter, snapshot config, redaksi, sesi dan persistence saat app dibuat ulang. Test membersihkan database miliknya; tidak memakai laporan/akun staging. Batas bukti terdapat di docs/fathul/workflow-verification.md pada root proyek.

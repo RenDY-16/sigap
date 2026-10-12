@@ -133,3 +133,7 @@ Typecheck lulus. Probe HTTP/Engine.IO terisolasi dengan database yang sengaja ti
 ## Kemajuan throttle login — 12 Oktober 2026
 
 Migration 0005 menyediakan bucket persisten, counter saturasi, expiry dan cleanup bounded. Reservasi tiga bucket atomik dilakukan sebelum verifikasi password; 429/Retry-After generik, 503 fail-closed. Sebelas pemeriksaan PostgreSQL/HTTP pada database sintetis terpisah berhasil, termasuk 20 request serentak, pembuatan ulang app, expiry, batas lintas sumber dan login admin yang menghasilkan sesi usable. Migration diterapkan ke staging lokal: schema v5, ready true, pending kosong. Lihat [login-throttle.md](./login-throttle.md). Fase 4–6 dan verifikasi workflow menyeluruh tetap terbuka.
+
+## Kemajuan walkthrough — 12 Oktober 2026
+
+Test HTTP/PostgreSQL sintetis mencakup 23 kelompok pemeriksaan: akun/role, region boundary, create retry/concurrency, ownership race/release/takeover, config version/pinned SOP/required fields, lifecycle/escalation/referral, roster availability, withdrawal accept/deny dan tracking stop, public/outbox redaction, cursor/filter, audit, app/pool recreation dan account disable. Seluruhnya berhasil. Ini memperkuat bukti runtime fase 1–3 pada cakupan test; browser, GPS perangkat, delivery/replay/revocation socket, restore drill serta gate fase 4–6 masih belum selesai. Detail: [workflow-verification.md](./workflow-verification.md).

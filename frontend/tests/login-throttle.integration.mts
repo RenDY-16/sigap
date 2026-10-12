@@ -12,7 +12,7 @@ const admin=new pg.Pool({connectionString:url.toString()});
 const database=`sigap_verify_${Date.now()}_${randomBytes(4).toString('hex')}`;
 let created=false;let pool:pg.Pool|undefined;let server:ReturnType<typeof createServer>|undefined;
 const checks:string[]=[];const secret=randomBytes(32).toString('hex');const password=randomBytes(24).toString('hex');
-const config={databaseUrl:'unused',host:'127.0.0.1',port:0,sessionSecret:secret,lanDemo:false,secureCookies:false,clientDistPath:'/nonexistent'};
+const config={databaseUrl:'unused',databasePoolMax:12,host:'127.0.0.1',port:0,sessionSecret:secret,lanDemo:false,secureCookies:false,clientDistPath:'/nonexistent'};
 async function start(){const runtime=createApplication(config,pool!);server=createServer(runtime.app);await new Promise<void>(r=>server!.listen(0,'127.0.0.1',r));const a=server.address();assert(a&&typeof a!=='string');return `http://127.0.0.1:${a.port}`;}
 async function stop(){if(server){server.closeAllConnections();await new Promise<void>((r,j)=>server!.close(e=>e?j(e):r()));server=undefined;}}
 async function login(base:string,username:string,pass='wrong-synthetic-password'){const response=await fetch(base+'/api/staff/session',{method:'POST',headers:{'X-SIGAP-Request':'staff','Content-Type':'application/json',Origin:base},body:JSON.stringify({username,password:pass})});return {response,body:await response.json()};}
